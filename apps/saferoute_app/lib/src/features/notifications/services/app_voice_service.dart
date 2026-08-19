@@ -79,15 +79,41 @@ class AppVoiceService {
     }
   }
 
+  /// Strips all emojis and decorative symbols so TTS only speaks natural text
+  static String sanitizeForSpeech(String text) {
+    if (text.isEmpty) return '';
+    final emojiRegex = RegExp(
+      r'[\u{1F600}-\u{1F64F}'
+      r'\u{1F300}-\u{1F5FF}'
+      r'\u{1F680}-\u{1F6FF}'
+      r'\u{1F1E0}-\u{1F1FF}'
+      r'\u{2600}-\u{26FF}'
+      r'\u{2700}-\u{27BF}'
+      r'\u{FE00}-\u{FE0F}'
+      r'\u{1F900}-\u{1F9FF}'
+      r'\u{1FA00}-\u{1FA6F}'
+      r'\u{1FA70}-\u{1FAFF}'
+      r'\u{200D}\u{200C}\u{FEFF}'
+      r']+',
+      unicode: true,
+    );
+    return text
+        .replaceAll(emojiRegex, '')
+        .replaceAll(RegExp(r'[•★*■◆▲►▶▼◀◄✓✔✕✖✗]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   Future<void> speak(String text) async {
-    if (text.trim().isEmpty) return;
+    final cleaned = sanitizeForSpeech(text);
+    if (cleaned.isEmpty) return;
     try {
       if (!_isInitialized) {
         await initialize();
       }
-      AppLogger.info('Speaking TTS: "$text"', context: 'VoiceTTS');
+      AppLogger.info('Speaking TTS: "$cleaned"', context: 'VoiceTTS');
       await _tts.stop();
-      final result = await _tts.speak(text.trim());
+      final result = await _tts.speak(cleaned);
       AppLogger.info('TTS speak result: $result', context: 'VoiceTTS');
     } catch (e) {
       AppLogger.error('TTS speech error', error: e, context: 'VoiceTTS');
@@ -106,8 +132,8 @@ class AppVoiceService {
     required String message,
     NotificationEventType? eventType,
   }) {
-    final cleanTitle = title.trim();
-    final cleanMsg = message.trim();
+    final cleanTitle = sanitizeForSpeech(title);
+    final cleanMsg = sanitizeForSpeech(message);
     final lowerTitle = cleanTitle.toLowerCase();
     final lowerMsg = cleanMsg.toLowerCase();
 
