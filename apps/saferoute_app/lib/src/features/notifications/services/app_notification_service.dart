@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -10,6 +11,54 @@ class AppNotificationHelper {
   static final Set<String> _seenDeliveryIds = {};
   static final DateTime _appLaunchTime = DateTime.now();
   static bool _dialogShowing = false;
+
+  /// Registers FCM Token with Supabase and sets up auto-refresh
+  static Future<void> registerDevicePushToken(String profileId) async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+      AppLogger.info('FCM Authorization status: ${settings.authorizationStatus}', context: 'AppNotificationHelper');
+
+      final token = await messaging.getToken();
+      if (token != null && token.isNotEmpty) {
+        AppLogger.info('Registering FCM Token with Supabase for profileId: $profileId', context: 'AppNotificationHelper');
+        await NotificationRepository().registerDeviceToken(
+          profileId: profileId,
+          fcmToken: token,
+          platform: DevicePlatform.android,
+        );
+      }
+
+      messaging.onTokenRefresh.listen((newToken) async {
+        if (newToken.isNotEmpty) {
+          await NotificationRepository().registerDeviceToken(
+            profileId: profileId,
+            fcmToken: newToken,
+            platform: DevicePlatform.android,
+          );
+        }
+      });
+    } catch (e) {
+      AppLogger.warning('Failed to register FCM token: $e', context: 'AppNotificationHelper');
+    }
+  }
+
+  /// Unregisters FCM Token on logout
+  static Future<void> unregisterDevicePushToken() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty) {
+        await NotificationRepository().unregisterDeviceToken(token);
+      }
+    } catch (e) {
+      AppLogger.warning('Failed to unregister FCM token: $e', context: 'AppNotificationHelper');
+    }
+  }
 
   static Future<void> init() async {
     if (_initialized) return;

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+import '../features/notifications/services/app_notification_service.dart';
 
 /// Auth state — tracks current user session and profile.
 @immutable
@@ -54,6 +55,9 @@ class AuthNotifier extends StateNotifier<SafeRouteAuthState> {
     try {
       final profile = await AuthService.getCurrentProfile();
       state = SafeRouteAuthState(isLoading: false, profile: profile);
+      if (profile != null) {
+        AppNotificationHelper.registerDevicePushToken(profile.id);
+      }
     } catch (e) {
       AppLogger.auth('Session initialization failed: ${e.runtimeType}');
       state = const SafeRouteAuthState(isLoading: false);
@@ -69,6 +73,9 @@ class AuthNotifier extends StateNotifier<SafeRouteAuthState> {
           try {
             final profile = await AuthService.getCurrentProfile();
             state = SafeRouteAuthState(isLoading: false, profile: profile);
+            if (profile != null) {
+              AppNotificationHelper.registerDevicePushToken(profile.id);
+            }
           } catch (e) {
             state = const SafeRouteAuthState(
               isLoading: false,
@@ -96,6 +103,9 @@ class AuthNotifier extends StateNotifier<SafeRouteAuthState> {
         password: password,
       );
       state = SafeRouteAuthState(isLoading: false, profile: profile);
+      if (profile != null) {
+        AppNotificationHelper.registerDevicePushToken(profile.id);
+      }
     } on supabase.AuthException catch (e) {
       AppLogger.auth('Sign in failed: ${e.message}');
       state = SafeRouteAuthState(
@@ -129,6 +139,7 @@ class AuthNotifier extends StateNotifier<SafeRouteAuthState> {
 
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true);
+    await AppNotificationHelper.unregisterDevicePushToken();
     await AuthService.signOut();
     state = const SafeRouteAuthState(isLoading: false);
   }

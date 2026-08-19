@@ -248,6 +248,7 @@ class DriverRepository {
             message = 'The school bus has safely arrived at the school campus.';
           }
 
+          final driverProfileId = SupabaseService.client.auth.currentUser?.id;
           final eventRes = await SupabaseService.client
               .from(AppConstants.tableNotificationEvents)
               .insert({
@@ -256,8 +257,8 @@ class DriverRepository {
                 'title': title,
                 'message': message,
                 'trip_id': tripId,
-                'priority': 'STANDARD',
-                'created_at': now.toIso8601String(),
+                'priority': 'NORMAL', // DB enum: NORMAL | HIGH | EMERGENCY
+                if (driverProfileId != null) 'sender_profile_id': driverProfileId,
               })
               .select()
               .single();
@@ -488,6 +489,16 @@ class DriverRepository {
         'Dispatched ${deliveries.length} deliveries for event $eventId (busId: $busId)',
         context: 'DriverRepository',
       );
+
+      // Trigger cloud push dispatch to FCM
+      try {
+        await SupabaseService.client.functions.invoke(
+          'dispatch-notification',
+          body: {'event_id': eventId},
+        );
+      } catch (fErr) {
+        AppLogger.info('Cloud push dispatch invoke notice: $fErr', context: 'DriverRepository');
+      }
     } catch (delErr) {
       AppLogger.warning(
         'Could not fan out deliveries for event $eventId: $delErr',
