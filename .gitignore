@@ -1,0 +1,39 @@
+# SafeRoute — .gitignore
+
+# Flutter/Dart
+*.dart_tool/
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# Secrets — NEVER commit these
+.env
+.env.local
+.env.production
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase-service-account.json
+**/keystore.jks
+**/key.properties
+**/*.keystore
+**/*.p12
+**/*.jks
+
+# IDE
+.idea/
+.vscode/settings.json
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Supabase local
+supabase/.temp/
+supabase/.env

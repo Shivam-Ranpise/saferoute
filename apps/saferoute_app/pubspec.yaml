@@ -1,0 +1,74 @@
+name: saferoute_app
+description: SafeRoute mobile app — Parent and Driver roles
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # SafeRoute core
+  saferoute_core:
+    path: ../../packages/saferoute_core
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  
+  # Routing
+  go_router: ^14.8.1
+
+  # Supabase
+  supabase_flutter: ^2.8.4
+
+  # Maps (OpenStreetMap — NEVER Google Maps)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Location (driver only — background tracking during active trip)
+  geolocator: ^13.0.2
+  permission_handler: ^11.3.1
+
+  # Notifications
+  firebase_core: ^3.13.1
+  firebase_messaging: ^15.2.5
+  flutter_local_notifications: ^18.0.1
+
+  # Storage
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.4
+  path_provider: ^2.1.5
+
+  # Network
+  dio: ^5.7.0
+  connectivity_plus: ^6.1.1
+
+  # UI
+  cached_network_image: ^3.4.1
+  flutter_svg: ^2.0.17
+  
+  # Utils
+  intl: ^0.20.2
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#0D1B3E"
+  adaptive_icon_foreground: "assets/icons/app_icon.png"
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/

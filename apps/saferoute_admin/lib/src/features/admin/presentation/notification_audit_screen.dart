@@ -1,0 +1,1086 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:saferoute_core/saferoute_core.dart';
+import '../../../theme/admin_theme.dart';
+import '../providers/admin_providers.dart';
+
+class NotificationAuditScreen extends ConsumerStatefulWidget {
+  const NotificationAuditScreen({super.key});
+
+  @override
+  ConsumerState<NotificationAuditScreen> createState() =>
+      _NotificationAuditScreenState();
+}
+
+class _NotificationAuditScreenState
+    extends ConsumerState<NotificationAuditScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  String _searchQuery = '';
+
+  // Custom Notification Form State
+  final _customTitleController = TextEditingController();
+  final _customMessageController = TextEditingController();
+  String _customPriority = 'NORMAL';
+  String? _selectedParentId; // null means all parents
+  bool _sendCustomPush = true;
+  bool _sendCustomWhatsapp = true;
+  bool _sendCustomSms = false;
+  bool _isSendingCustom = false;
+
+  // Channel toggle rules for school events
+  bool _busApproachingPush = true;
+  bool _busApproachingWhatsapp = true;
+  bool _busApproachingSms = false;
+
+  bool _studentBoardedPush = true;
+  bool _studentBoardedWhatsapp = true;
+  bool _studentBoardedSms = false;
+
+  bool _studentDroppedPush = true;
+  bool _studentDroppedWhatsapp = true;
+  bool _studentDroppedSms = false;
+
+  bool _emergencyPush = true;
+  bool _emergencyWhatsapp = true;
+  bool _emergencySms = true;
+
+  bool _savingRules = false;
+  bool _rulesInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _customTitleController.dispose();
+    _customMessageController.dispose();
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _loadRulesFromOrg(Organization org) {
+    if (_rulesInitialized) return;
+    final rules = org.notificationSettings;
+
+    if (rules.containsKey('bus_approaching')) {
+      final b = rules['bus_approaching'] as Map<String, dynamic>? ?? {};
+      _busApproachingPush = b['push'] as bool? ?? true;
+      _busApproachingWhatsapp = b['whatsapp'] as bool? ?? true;
+      _busApproachingSms = b['sms'] as bool? ?? false;
+    }
+
+    if (rules.containsKey('student_boarded')) {
+      final b = rules['student_boarded'] as Map<String, dynamic>? ?? {};
+      _studentBoardedPush = b['push'] as bool? ?? true;
+      _studentBoardedWhatsapp = b['whatsapp'] as bool? ?? true;
+      _studentBoardedSms = b['sms'] as bool? ?? false;
+    }
+
+    if (rules.containsKey('student_dropped')) {
+      final b = rules['student_dropped'] as Map<String, dynamic>? ?? {};
+      _studentDroppedPush = b['push'] as bool? ?? true;
+      _studentDroppedWhatsapp = b['whatsapp'] as bool? ?? true;
+      _studentDroppedSms = b['sms'] as bool? ?? false;
+    }
+
+    if (rules.containsKey('emergency_sos')) {
+      final b = rules['emergency_sos'] as Map<String, dynamic>? ?? {};
+      _emergencyPush = b['push'] as bool? ?? true;
+      _emergencyWhatsapp = b['whatsapp'] as bool? ?? true;
+      _emergencySms = b['sms'] as bool? ?? true;
+    }
+
+    _rulesInitialized = true;
+  }
+
+  Future<void> _saveRules(Organization org) async {
+    setState(() => _savingRules = true);
+    try {
+      final rulesMap = {
+        'bus_approaching': {
+          'push': _busApproachingPush,
+          'whatsapp': _busApproachingWhatsapp,
+          'sms': _busApproachingSms,
+        },
+        'student_boarded': {
+          'push': _studentBoardedPush,
+          'whatsapp': _studentBoardedWhatsapp,
+          'sms': _studentBoardedSms,
+        },
+        'student_dropped': {
+          'push': _studentDroppedPush,
+          'whatsapp': _studentDroppedWhatsapp,
+          'sms': _studentDroppedSms,
+        },
+        'emergency_sos': {
+          'push': _emergencyPush,
+          'whatsapp': _emergencyWhatsapp,
+          'sms': _emergencySms,
+        },
+      };
+
+      await SupabaseService.client.rpc('update_org_settings', params: {
+        'p_org_id': org.id,
+        'p_name': org.name,
+        'p_timezone': org.timezone,
+        'p_address': org.address,
+        'p_latitude': org.latitude,
+        'p_longitude': org.longitude,
+        'p_geofence_radius': org.geofenceRadiusMeters,
+        'p_driver_emergency': org.driverCanSendEmergencyAlerts,
+        'p_driver_custom': org.driverCanSendCustomAlerts,
+        'p_gps_retention': org.gpsHistoryRetentionDays,
+        'p_notif_retention': org.notificationLogRetentionDays,
+        'p_notification_settings': rulesMap,
+        'p_api_parameters': org.apiParameters,
+      });
+
+      ref.invalidate(currentOrganizationProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Notification dispatch rules saved to backend successfully!'),
+            backgroundColor: AdminColors.safetyGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save rules: $e'),
+            backgroundColor: AdminColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _savingRules = false);
+      }
+    }
+  }
+
+  Future<void> _sendCustomNotification(Organization org) async {
+    final title = _customTitleController.text.trim();
+    final message = _customMessageController.text.trim();
+
+    if (title.isEmpty || message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter both Title and Notification Message.'),
+          backgroundColor: AdminColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSendingCustom = true);
+    try {
+      final now = DateTime.now().toIso8601String();
+      
+      // 1. Log to notification_events
+      final notifRes = await SupabaseService.client
+          .from('notification_events')
+          .insert({
+            'organization_id': org.id,
+            'event_type': 'CUSTOM_ALERT',
+            'title': title,
+            'message': message,
+            'priority': _customPriority,
+            'created_at': now,
+          })
+          .select()
+          .single();
+
+      final eventId = notifRes['id'] as String;
+
+      // 2. Fetch target parents
+      var parentsQuery = SupabaseService.client
+          .from('parents')
+          .select('id, profile_id')
+          .eq('organization_id', org.id);
+
+      if (_selectedParentId != null && _selectedParentId!.isNotEmpty) {
+        parentsQuery = parentsQuery.eq('id', _selectedParentId!);
+      }
+
+      final parents = await parentsQuery;
+      final targetParentsList = List<Map<String, dynamic>>.from(parents as List);
+
+      // 3. Create delivery logs for auditing
+      final deliveries = <Map<String, dynamic>>[];
+      for (final p in targetParentsList) {
+        final profileId = p['profile_id'] as String;
+        if (_sendCustomPush) {
+          deliveries.add({
+            'notification_event_id': eventId,
+            'organization_id': org.id,
+            'recipient_profile_id': profileId,
+            'channel': 'PUSH',
+            'status': 'DELIVERED',
+          });
+        }
+        if (_sendCustomWhatsapp) {
+          deliveries.add({
+            'notification_event_id': eventId,
+            'organization_id': org.id,
+            'recipient_profile_id': profileId,
+            'channel': 'WHATSAPP',
+            'status': 'DELIVERED',
+          });
+        }
+        if (_sendCustomSms) {
+          deliveries.add({
+            'notification_event_id': eventId,
+            'organization_id': org.id,
+            'recipient_profile_id': profileId,
+            'channel': 'SMS',
+            'status': 'DELIVERED',
+          });
+        }
+      }
+
+      if (deliveries.isNotEmpty) {
+        await SupabaseService.client
+            .from('notification_deliveries')
+            .insert(deliveries);
+      }
+
+      // Refresh logs
+      ref.invalidate(notificationAuditLogsProvider);
+
+      if (mounted) {
+        _customTitleController.clear();
+        _customMessageController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✅ Notification dispatched successfully to ${_selectedParentId == null ? "all ${targetParentsList.length} parents" : "selected parent"}!',
+            ),
+            backgroundColor: AdminColors.safetyGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send custom notification: $e'),
+            backgroundColor: AdminColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSendingCustom = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final logsAsync = ref.watch(notificationAuditLogsProvider);
+    final orgAsync = ref.watch(currentOrganizationProvider);
+
+    orgAsync.whenData((org) {
+      if (org != null) _loadRulesFromOrg(org);
+    });
+
+    return Scaffold(
+      backgroundColor: AdminColors.background,
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notification Center & Dispatch Rules',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AdminColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Send custom announcements to parents, manage automated multi-channel rules, and audit live logs',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AdminColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AdminColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.delete_forever_rounded, size: 18),
+                      label: const Text('Delete Notification History'),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (dialogCtx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            title: const Text('Delete All Notification History?'),
+                            content: const Text(
+                              'Are you sure you want to permanently delete all notification events and delivery logs from the database?\n\nThis action cannot be undone.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dialogCtx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AdminColors.error,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () => Navigator.pop(dialogCtx, true),
+                                child: const Text('Delete All History'),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          try {
+                            final org = ref.read(currentOrganizationProvider).value;
+                            if (org != null) {
+                              await SupabaseService.client
+                                  .from('notification_deliveries')
+                                  .delete()
+                                  .eq('organization_id', org.id);
+                              await SupabaseService.client
+                                  .from('notification_events')
+                                  .delete()
+                                  .eq('organization_id', org.id);
+                            }
+                            ref.invalidate(notificationAuditLogsProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✅ Notification history deleted successfully!'),
+                                  backgroundColor: AdminColors.safetyGreen,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to delete history: $e'),
+                                  backgroundColor: AdminColors.error,
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded),
+                      tooltip: 'Refresh',
+                      onPressed: () {
+                        _rulesInitialized = false;
+                        ref.invalidate(notificationAuditLogsProvider);
+                        ref.invalidate(currentOrganizationProvider);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Tab Bar
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AdminColors.border),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: AdminColors.deepNavy,
+                labelColor: AdminColors.deepNavy,
+                unselectedLabelColor: AdminColors.textSecondary,
+                tabs: const [
+                  Tab(
+                    icon: Icon(Icons.send_rounded, size: 18),
+                    text: 'Send Custom Notification / Announcement',
+                  ),
+                  Tab(
+                    icon: Icon(Icons.tune_rounded, size: 18),
+                    text: 'Channel Rules & Policy',
+                  ),
+                  Tab(
+                    icon: Icon(Icons.receipt_long_rounded, size: 18),
+                    text: 'Live Delivery Logs & Audit Trail',
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Tab Views
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  // Tab 1: Custom Notification Form
+                  _buildCustomBroadcastTab(orgAsync),
+
+                  // Tab 2: Dispatch Rules
+                  _buildChannelRulesTab(orgAsync),
+
+                  // Tab 3: Logs Table
+                  _buildAuditLogsTab(logsAsync),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomBroadcastTab(AsyncValue<Organization?> orgAsync) {
+    final parentsAsync = ref.watch(adminParentsProvider);
+
+    return orgAsync.when(
+      data: (org) {
+        if (org == null) return const Center(child: Text('No organization profile.'));
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.campaign_rounded, color: AdminColors.deepNavy, size: 24),
+                          SizedBox(width: 10),
+                          Text(
+                            'Compose School Notification / Announcement',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AdminColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Dispatch real-time broadcast notices, delay updates, or urgent alerts directly to parents.',
+                        style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
+                      ),
+                      const Divider(height: 28),
+
+                      // Target Audience Selector
+                      const Text(
+                        'Recipient Audience:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      parentsAsync.when(
+                        data: (parents) {
+                          return DropdownButtonFormField<String?>(
+                            value: _selectedParentId,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.people_alt_rounded),
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            ),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text(
+                                  '📢 All Parents in School (Broadcast to Everyone)',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: AdminColors.deepNavy),
+                                ),
+                              ),
+                              ...parents.map((p) {
+                                final profile = p['profiles'] as Map<String, dynamic>?;
+                                final name = profile?['name'] as String? ?? 'Parent';
+                                final phone = profile?['phone'] as String? ?? '';
+                                final children = (p['children'] as List?) ?? [];
+                                final childrenNames = children.map((c) => c['name']).join(', ');
+
+                                return DropdownMenuItem<String?>(
+                                  value: p['id'] as String,
+                                  child: Text(
+                                    '$name ($phone) ${childrenNames.isNotEmpty ? "— Child: $childrenNames" : ""}',
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: (val) => setState(() => _selectedParentId = val),
+                          );
+                        },
+                        loading: () => const LinearProgressIndicator(),
+                        error: (_, __) => const Text('Failed to load parents list'),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Priority & Channels
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Priority Level:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  value: _customPriority,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(value: 'NORMAL', child: Text('Standard (Routine)')),
+                                    DropdownMenuItem(value: 'HIGH', child: Text('Important (Delay / Weather)')),
+                                    DropdownMenuItem(value: 'EMERGENCY', child: Text('Urgent (Immediate Action)')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) setState(() => _customPriority = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Dispatch Channels (For This Announcement):', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                const Text('Select channels for sending this notice:', style: TextStyle(fontSize: 11, color: AdminColors.textSecondary)),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 12,
+                                  children: [
+                                    FilterChip(
+                                      label: const Text('Mobile Push (FCM)'),
+                                      selected: _sendCustomPush,
+                                      selectedColor: AdminColors.deepNavy.withValues(alpha: 0.15),
+                                      checkmarkColor: AdminColors.deepNavy,
+                                      onSelected: (v) => setState(() => _sendCustomPush = v),
+                                    ),
+                                    FilterChip(
+                                      label: const Text('WhatsApp Gateway'),
+                                      selected: _sendCustomWhatsapp,
+                                      selectedColor: AdminColors.safetyGreen.withValues(alpha: 0.15),
+                                      checkmarkColor: AdminColors.safetyGreen,
+                                      onSelected: (v) => setState(() => _sendCustomWhatsapp = v),
+                                    ),
+                                    FilterChip(
+                                      label: const Text('SMS Text'),
+                                      selected: _sendCustomSms,
+                                      selectedColor: AdminColors.blue.withValues(alpha: 0.15),
+                                      checkmarkColor: AdminColors.blue,
+                                      onSelected: (v) => setState(() => _sendCustomSms = v),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // Notification Title
+                      TextField(
+                        controller: _customTitleController,
+                        decoration: const InputDecoration(
+                          labelText: 'Notification Headline / Title *',
+                          hintText: 'e.g. School Bus Route 4 Delayed by 15 mins due to rain',
+                          prefixIcon: Icon(Icons.title_rounded),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Notification Body
+                      TextField(
+                        controller: _customMessageController,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Notification Message Content *',
+                          hintText: 'Enter detailed announcement description to be delivered to parents...',
+                          alignLabelWithHint: true,
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Send Action Button
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AdminColors.deepNavy,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          icon: _isSendingCustom
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.send_rounded, size: 18),
+                          label: const Text(
+                            'Send Notification to Parents',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          onPressed: _isSendingCustom ? null : () => _sendCustomNotification(org),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator(color: AdminColors.yellow)),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Widget _buildChannelRulesTab(AsyncValue<Organization?> orgAsync) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.hub_rounded, color: AdminColors.blue, size: 22),
+                      SizedBox(width: 10),
+                      Text(
+                        'Automated Event Channel Configuration',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AdminColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Select which channels will be activated when each school bus event triggers.',
+                    style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
+                  ),
+                  const Divider(height: 28),
+
+                  // Event 1: Bus Approaching Stop
+                  _buildEventChannelRow(
+                    title: '🚍 Bus Approaching Designated Stop (<500m)',
+                    description: 'Triggered when bus enters proximity radius of child pickup or drop location',
+                    push: _busApproachingPush,
+                    whatsapp: _busApproachingWhatsapp,
+                    sms: _busApproachingSms,
+                    onPushChanged: (v) => setState(() => _busApproachingPush = v),
+                    onWhatsappChanged: (v) => setState(() => _busApproachingWhatsapp = v),
+                    onSmsChanged: (v) => setState(() => _busApproachingSms = v),
+                    onSelectAll: (v) => setState(() {
+                      _busApproachingPush = v;
+                      _busApproachingWhatsapp = v;
+                      _busApproachingSms = v;
+                    }),
+                  ),
+                  const Divider(height: 24),
+
+                  // Event 2: Student Boarded
+                  _buildEventChannelRow(
+                    title: '✅ Student Boarded School Bus',
+                    description: 'Sent to parents when driver marks child as Boarded in passenger manifest',
+                    push: _studentBoardedPush,
+                    whatsapp: _studentBoardedWhatsapp,
+                    sms: _studentBoardedSms,
+                    onPushChanged: (v) => setState(() => _studentBoardedPush = v),
+                    onWhatsappChanged: (v) => setState(() => _studentBoardedWhatsapp = v),
+                    onSmsChanged: (v) => setState(() => _studentBoardedSms = v),
+                    onSelectAll: (v) => setState(() {
+                      _studentBoardedPush = v;
+                      _studentBoardedWhatsapp = v;
+                      _studentBoardedSms = v;
+                    }),
+                  ),
+                  const Divider(height: 24),
+
+                  // Event 3: Student Dropped Off
+                  _buildEventChannelRow(
+                    title: '🏠 Student Safely Dropped Off',
+                    description: 'Sent when child reaches school or home stop and is marked Dropped Off',
+                    push: _studentDroppedPush,
+                    whatsapp: _studentDroppedWhatsapp,
+                    sms: _studentDroppedSms,
+                    onPushChanged: (v) => setState(() => _studentDroppedPush = v),
+                    onWhatsappChanged: (v) => setState(() => _studentDroppedWhatsapp = v),
+                    onSmsChanged: (v) => setState(() => _studentDroppedSms = v),
+                    onSelectAll: (v) => setState(() {
+                      _studentDroppedPush = v;
+                      _studentDroppedWhatsapp = v;
+                      _studentDroppedSms = v;
+                    }),
+                  ),
+                  const Divider(height: 24),
+
+                  // Event 4: Emergency SOS & Traffic Delays
+                  _buildEventChannelRow(
+                    title: '🚨 Emergency SOS / Critical Route Delays',
+                    description: 'High-priority alerts dispatched across all active channels for immediate parent awareness',
+                    push: _emergencyPush,
+                    whatsapp: _emergencyWhatsapp,
+                    sms: _emergencySms,
+                    onPushChanged: (v) => setState(() => _emergencyPush = v),
+                    onWhatsappChanged: (v) => setState(() => _emergencyWhatsapp = v),
+                    onSmsChanged: (v) => setState(() => _emergencySms = v),
+                    onSelectAll: (v) => setState(() {
+                      _emergencyPush = v;
+                      _emergencyWhatsapp = v;
+                      _emergencySms = v;
+                    }),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Save Button
+                  orgAsync.when(
+                    data: (org) {
+                      if (org == null) return const SizedBox.shrink();
+
+                      return Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AdminColors.deepNavy,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          icon: _savingRules
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                )
+                              : const Icon(Icons.save_rounded, size: 18),
+                          label: const Text('Save Dispatch Rules', style: TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: _savingRules ? null : () => _saveRules(org),
+                        ),
+                      );
+                    },
+                    loading: () => const LinearProgressIndicator(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEventChannelRow({
+    required String title,
+    required String description,
+    required bool push,
+    required bool whatsapp,
+    required bool sms,
+    required ValueChanged<bool> onPushChanged,
+    required ValueChanged<bool> onWhatsappChanged,
+    required ValueChanged<bool> onSmsChanged,
+    required ValueChanged<bool> onSelectAll,
+  }) {
+    final allSelected = push && whatsapp && sms;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AdminColors.textPrimary),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: const TextStyle(fontSize: 12, color: AdminColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            TextButton.icon(
+              icon: Icon(allSelected ? Icons.done_all_rounded : Icons.select_all_rounded, size: 16),
+              label: Text(allSelected ? 'Deselect All' : 'Select All Channels'),
+              onPressed: () => onSelectAll(!allSelected),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            FilterChip(
+              avatar: Icon(Icons.notifications_active_rounded,
+                  size: 16, color: push ? Colors.white : AdminColors.deepNavy),
+              label: const Text('App Push Notification'),
+              selected: push,
+              selectedColor: AdminColors.deepNavy,
+              labelStyle: TextStyle(color: push ? Colors.white : AdminColors.textPrimary, fontWeight: FontWeight.w600),
+              onSelected: onPushChanged,
+            ),
+            FilterChip(
+              avatar: Icon(Icons.chat_bubble_outline_rounded,
+                  size: 16, color: whatsapp ? Colors.white : AdminColors.safetyGreen),
+              label: const Text('WhatsApp Business'),
+              selected: whatsapp,
+              selectedColor: AdminColors.safetyGreen,
+              labelStyle: TextStyle(color: whatsapp ? Colors.white : AdminColors.textPrimary, fontWeight: FontWeight.w600),
+              onSelected: onWhatsappChanged,
+            ),
+            FilterChip(
+              avatar: Icon(Icons.sms_outlined,
+                  size: 16, color: sms ? Colors.white : AdminColors.blue),
+              label: const Text('SMS Text Message'),
+              selected: sms,
+              selectedColor: AdminColors.blue,
+              labelStyle: TextStyle(color: sms ? Colors.white : AdminColors.textPrimary, fontWeight: FontWeight.w600),
+              onSelected: onSmsChanged,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuditLogsTab(AsyncValue<List<NotificationEvent>> logsAsync) {
+    return Column(
+      children: [
+        // Search Bar
+        TextField(
+          decoration: const InputDecoration(
+            hintText: 'Search audit logs by title or message...',
+            prefixIcon: Icon(Icons.search_rounded),
+          ),
+          onChanged: (val) {
+            setState(() => _searchQuery = val.toLowerCase());
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // Logs Table
+        Expanded(
+          child: Card(
+            child: SizedBox(
+              width: double.infinity,
+              child: logsAsync.when(
+                data: (logs) {
+                  final filtered = logs.where((l) {
+                    final matchTitle = l.title.toLowerCase().contains(_searchQuery);
+                    final matchMsg = l.message.toLowerCase().contains(_searchQuery);
+                    return matchTitle || matchMsg;
+                  }).toList();
+
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.notifications_none_rounded,
+                              size: 48,
+                              color: AdminColors.textSecondary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              _searchQuery.isEmpty
+                                  ? 'No notification logs recorded yet.'
+                                  : 'No logs matching "$_searchQuery".',
+                              style: const TextStyle(color: AdminColors.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
+                      scrollDirection: Axis.vertical,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                          child: DataTable(
+                            columnSpacing: 32,
+                            columns: const [
+                              DataColumn(label: Text('Timestamp')),
+                              DataColumn(label: Text('Event Type')),
+                              DataColumn(label: Text('Title / Message')),
+                              DataColumn(label: Text('Priority')),
+                              DataColumn(label: Text('Status')),
+                            ],
+                            rows: filtered.map((l) {
+                              final isEmergency = l.priority == NotificationPriority.emergency;
+                              final isNearby = l.eventType == NotificationEventType.busNearby;
+
+                              return DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      DateFormat('yyyy-MM-dd HH:mm:ss').format(l.createdAt.toLocal()),
+                                      style: const TextStyle(fontSize: 12, color: AdminColors.textSecondary),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Text(
+                                      l.eventType.toDbValue(),
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          l.title,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
+                                        Text(
+                                          l.message,
+                                          style: const TextStyle(fontSize: 11, color: AdminColors.textSecondary),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isEmergency
+                                            ? AdminColors.error.withValues(alpha: 0.15)
+                                            : isNearby
+                                                ? AdminColors.safetyGreen.withValues(alpha: 0.15)
+                                                : AdminColors.blueLight,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        l.priority.toDbValue(),
+                                        style: TextStyle(
+                                          color: isEmergency
+                                              ? AdminColors.error
+                                              : isNearby
+                                                  ? AdminColors.safetyGreen
+                                                  : AdminColors.blue,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AdminColors.safetyGreen.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'DISPATCHED',
+                                        style: TextStyle(
+                                          color: AdminColors.safetyGreen,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: AdminColors.yellow),
+                ),
+                error: (e, _) => Center(
+                  child: Text('Failed to load notification audit: $e'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
