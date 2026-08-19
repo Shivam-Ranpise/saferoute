@@ -159,8 +159,13 @@ class DriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>> {
     }
   }
 
-  /// Triggers emergency broadcast
-  Future<void> triggerEmergency(String title, String description) async {
+  /// Triggers emergency broadcast or targeted parent alert
+  Future<void> triggerEmergency(
+    String title,
+    String description, {
+    String? targetParentProfileId,
+    String? targetChildId,
+  }) async {
     final currentTrip = state.value;
     final bundle = _ref.read(currentDriverBundleProvider).value;
     if (currentTrip == null || bundle == null) return;
@@ -171,6 +176,8 @@ class DriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>> {
         tripId: currentTrip.id,
         title: title,
         description: description,
+        targetParentProfileId: targetParentProfileId,
+        targetChildId: targetChildId,
       );
     } catch (e) {
       AppLogger.error('Failed to dispatch emergency', error: e);

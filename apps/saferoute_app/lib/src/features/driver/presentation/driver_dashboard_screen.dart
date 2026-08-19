@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../notifications/services/app_notification_service.dart';
 import '../providers/driver_providers.dart';
@@ -39,9 +40,10 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
   }
 
   void _confirmEndTrip() {
+    final loc = ref.read(appLocalizationsProvider);
     showDialog(
       context: context,
-      builder: (context) => Dialog(
+      builder: (dialogCtx) => Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -68,9 +70,9 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'End Trip?',
-                    style: TextStyle(
+                  Text(
+                    loc.endTripDialogTitle,
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                       color: SafeRouteColors.deepNavy,
@@ -80,10 +82,10 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'Are you sure you want to finish this trip? Live GPS broadcasting will stop and parents will be notified that the trip has concluded.',
+                loc.endTripDialogMsg,
                 style: TextStyle(
                   color: Colors.grey.shade700,
-                  fontSize: 14,
+                  fontSize: 13.5,
                   height: 1.4,
                 ),
               ),
@@ -93,15 +95,15 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         side: BorderSide(color: Colors.grey.shade300),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(dialogCtx),
                       child: Text(
-                        'Cancel',
+                        loc.cancelButton,
                         style: TextStyle(
                           color: Colors.grey.shade700,
                           fontWeight: FontWeight.w600,
@@ -115,19 +117,19 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: SafeRouteColors.error,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.pop(dialogCtx);
                         ref.read(driverActiveTripProvider.notifier).endTrip();
                       },
-                      child: const Text(
-                        'End Trip',
-                        style: TextStyle(
+                      child: Text(
+                        loc.endTrip,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -149,6 +151,8 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
     final bundleAsync = ref.watch(currentDriverBundleProvider);
     final tripAsync = ref.watch(driverActiveTripProvider);
     final trip = tripAsync.value;
+    final loc = ref.watch(appLocalizationsProvider);
+    final currentLocale = ref.watch(appLocaleProvider);
 
     return Scaffold(
       backgroundColor: SafeRouteColors.deepNavy,
@@ -158,9 +162,9 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'SafeRoute Driver',
-              style: TextStyle(
+            Text(
+              loc.driverAppbarTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
@@ -168,7 +172,7 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
             ),
             if (profile != null)
               Text(
-                'Driver: ${profile.name}',
+                loc.driverPrefix(profile.name),
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 12,
@@ -177,13 +181,84 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
           ],
         ),
         actions: [
+          // Language Switcher Dropdown
+          PopupMenuButton<String>(
+            icon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.language_rounded, size: 16, color: SafeRouteColors.yellow),
+                  const SizedBox(width: 4),
+                  Text(
+                    currentLocale.languageCode == 'mr'
+                        ? 'मराठी'
+                        : (currentLocale.languageCode == 'hi' ? 'हिंदी' : 'EN'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (langCode) {
+              ref.read(appLocaleProvider.notifier).setLanguage(langCode);
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'en',
+                child: Row(
+                  children: [
+                    const Text('🇬🇧 English'),
+                    if (currentLocale.languageCode == 'en')
+                      const Spacer(),
+                    if (currentLocale.languageCode == 'en')
+                      const Icon(Icons.check, color: SafeRouteColors.deepNavy, size: 18),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'hi',
+                child: Row(
+                  children: [
+                    const Text('🇮🇳 हिंदी (Hindi)'),
+                    if (currentLocale.languageCode == 'hi')
+                      const Spacer(),
+                    if (currentLocale.languageCode == 'hi')
+                      const Icon(Icons.check, color: SafeRouteColors.deepNavy, size: 18),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'mr',
+                child: Row(
+                  children: [
+                    const Text('🇮🇳 मराठी (Marathi)'),
+                    if (currentLocale.languageCode == 'mr')
+                      const Spacer(),
+                    if (currentLocale.languageCode == 'mr')
+                      const Icon(Icons.check, color: SafeRouteColors.deepNavy, size: 18),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white70),
-            tooltip: 'Sign Out',
+            tooltip: loc.logoutButton,
             onPressed: () {
               showDialog(
                 context: context,
-                builder: (context) => Dialog(
+                builder: (dialogCtx) => Dialog(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -210,9 +285,9 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            const Text(
-                              'Sign Out',
-                              style: TextStyle(
+                            Text(
+                              loc.signOutDialogTitle,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
                                 color: SafeRouteColors.deepNavy,
@@ -222,10 +297,10 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          'Are you sure you want to sign out of SafeRoute Driver?',
+                          loc.signOutDialogMsg,
                           style: TextStyle(
                             color: Colors.grey.shade700,
-                            fontSize: 14,
+                            fontSize: 13.5,
                             height: 1.4,
                           ),
                         ),
@@ -235,15 +310,15 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                             Expanded(
                               child: OutlinedButton(
                                 style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
                                   side: BorderSide(color: Colors.grey.shade300),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: () => Navigator.pop(dialogCtx),
                                 child: Text(
-                                  'Cancel',
+                                  loc.cancelButton,
                                   style: TextStyle(
                                     color: Colors.grey.shade700,
                                     fontWeight: FontWeight.w600,
@@ -257,19 +332,19 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: SafeRouteColors.error,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
                                 onPressed: () {
-                                  Navigator.pop(context);
+                                  Navigator.pop(dialogCtx);
                                   ref.read(authProvider.notifier).signOut();
                                 },
-                                child: const Text(
-                                  'Sign Out',
-                                  style: TextStyle(
+                                child: Text(
+                                  loc.logoutButton,
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -290,28 +365,28 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
       body: bundleAsync.when(
         data: (bundle) {
           if (bundle == null || bundle.bus == null) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.directions_bus_outlined,
+                    const Icon(Icons.directions_bus_outlined,
                         color: SafeRouteColors.yellow, size: 64),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
-                      'No Bus Assigned',
-                      style: TextStyle(
+                      loc.noBusAssigned,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
-                      'Please contact school operations to assign a vehicle to your driver profile.',
+                      loc.noBusAssignedDesc,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white70, height: 1.4),
+                      style: const TextStyle(color: Colors.white70, height: 1.4),
                     ),
                   ],
                 ),
@@ -363,171 +438,165 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
               ),
 
               // Bottom Trip Controls Card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: const BoxDecoration(
-                      color: SafeRouteColors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 8,
-                          offset: Offset(0, -3),
-                        ),
-                      ],
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: SafeRouteColors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, -3),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (trip == null || !trip.isOngoing) ...[
-                          // Start Trip Action
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: SafeRouteColors.safetyGreen,
-                                foregroundColor: Colors.white,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              icon: const Icon(Icons.play_arrow_rounded,
-                                  size: 28),
-                              label: const Text(
-                                'START TRIP',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              onPressed: () => ref
-                                  .read(driverActiveTripProvider.notifier)
-                                  .startTrip(),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (trip == null || !trip.isOngoing) ...[
+                      // Start Trip Action
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: SafeRouteColors.safetyGreen,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                          label: Text(
+                            loc.startTrip.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                        ] else ...[
-                          // Active Trip Status & Controls
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: ref.watch(driverActiveTripProvider.notifier).isBroadcasting
-                                      ? SafeRouteColors.safetyGreen.withValues(alpha: 0.2)
-                                      : SafeRouteColors.warning.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
+                          onPressed: () => ref
+                              .read(driverActiveTripProvider.notifier)
+                              .startTrip(),
+                        ),
+                      ),
+                    ] else ...[
+                      // Active Trip Status & Controls
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: ref.watch(driverActiveTripProvider.notifier).isBroadcasting
+                                  ? SafeRouteColors.safetyGreen.withValues(alpha: 0.2)
+                                  : SafeRouteColors.warning.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 4,
+                                  backgroundColor: ref.watch(driverActiveTripProvider.notifier).isBroadcasting
+                                      ? SafeRouteColors.safetyGreen
+                                      : SafeRouteColors.warning,
                                 ),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 4,
-                                      backgroundColor: ref.watch(driverActiveTripProvider.notifier).isBroadcasting
-                                          ? SafeRouteColors.safetyGreen
-                                          : SafeRouteColors.warning,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      ref.watch(driverActiveTripProvider.notifier).isBroadcasting
-                                          ? 'LIVE GPS BROADCASTING'
-                                          : 'GPS PAUSED',
-                                      style: TextStyle(
-                                        color: ref.watch(driverActiveTripProvider.notifier).isBroadcasting
-                                            ? SafeRouteColors.safetyGreen
-                                            : SafeRouteColors.warning,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                                const SizedBox(width: 6),
+                                Text(
+                                  ref.watch(driverActiveTripProvider.notifier).isBroadcasting
+                                      ? loc.liveGpsBroadcasting
+                                      : loc.gpsPaused,
+                                  style: TextStyle(
+                                    color: ref.watch(driverActiveTripProvider.notifier).isBroadcasting
+                                        ? SafeRouteColors.safetyGreen
+                                        : SafeRouteColors.warning,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Row(
-                                children: [
-                                  TextButton.icon(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: const Color(0xFFD97706),
-                                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                                    ),
-                                    icon: const Icon(Icons.timer_outlined, size: 16),
-                                    label: const Text(
-                                      'Delay',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                    ),
-                                    onPressed: _showDelayDialog,
-                                  ),
-                                  TextButton.icon(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: SafeRouteColors.error,
-                                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                                    ),
-                                    icon: const Icon(Icons.warning_rounded, size: 16),
-                                    label: const Text(
-                                      'SOS Alert',
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                    ),
-                                    onPressed: _showEmergencyDialog,
-                                  ),
-                                ],
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 14),
                           Row(
                             children: [
-                              // Pause / Resume Toggle
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                  ),
-                                  icon: Icon(
-                                    ref.watch(driverActiveTripProvider.notifier).isBroadcasting
-                                        ? Icons.pause
-                                        : Icons.play_arrow,
-                                  ),
-                                  label: Text(
-                                    ref.watch(driverActiveTripProvider.notifier).isBroadcasting
-                                        ? 'Pause GPS'
-                                        : 'Resume GPS',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  onPressed: () {
-                                    ref
-                                        .read(driverActiveTripProvider.notifier)
-                                        .toggleGpsBroadcasting();
-                                  },
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFFD97706),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6),
                                 ),
+                                icon: const Icon(Icons.timer_outlined, size: 16),
+                                label: Text(
+                                  loc.delayButton,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                onPressed: _showDelayDialog,
                               ),
-                              const SizedBox(width: 12),
-                              // End Trip Button
-                              Expanded(
-                                child: ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: SafeRouteColors.error,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 12),
-                                  ),
-                                  icon: const Icon(Icons.stop_rounded),
-                                  label: const Text(
-                                    'End Trip',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  onPressed: _confirmEndTrip,
+                              TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: SafeRouteColors.error,
+                                  padding: const EdgeInsets.symmetric(horizontal: 6),
                                 ),
+                                icon: const Icon(Icons.warning_rounded, size: 16),
+                                label: Text(
+                                  loc.sosButton,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                onPressed: _showEmergencyDialog,
                               ),
                             ],
                           ),
                         ],
-                      ],
-                    ),
-                  ),
-                ],
-              );
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          // Pause / Resume Toggle
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              icon: Icon(
+                                ref.watch(driverActiveTripProvider.notifier).isBroadcasting
+                                    ? Icons.pause
+                                    : Icons.play_arrow,
+                              ),
+                              label: Text(
+                                ref.watch(driverActiveTripProvider.notifier).isBroadcasting
+                                    ? loc.pauseGps
+                                    : loc.resumeGps,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () {
+                                ref
+                                    .read(driverActiveTripProvider.notifier)
+                                    .toggleGpsBroadcasting();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // End Trip Button
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: SafeRouteColors.error,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                              icon: const Icon(Icons.stop_rounded),
+                              label: Text(
+                                loc.endTrip,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: _confirmEndTrip,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          );
         },
         loading: () => const Center(
           child: CircularProgressIndicator(color: SafeRouteColors.yellow),

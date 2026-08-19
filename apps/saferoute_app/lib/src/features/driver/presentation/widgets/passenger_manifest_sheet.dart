@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../providers/locale_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../providers/driver_providers.dart';
 
@@ -10,22 +11,23 @@ class PassengerManifestSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final studentsAsync = ref.watch(driverStudentsProvider);
     final statusMap = ref.watch(passengerStatusProvider);
+    final loc = ref.watch(appLocalizationsProvider);
 
     return studentsAsync.when(
       data: (students) {
         if (students.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(32),
+              padding: const EdgeInsets.all(32),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.people_outline,
+                  const Icon(Icons.people_outline,
                       color: SafeRouteColors.onSurfaceVariant, size: 48),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Text(
-                    'No students assigned to this bus route yet.',
-                    style: TextStyle(color: SafeRouteColors.onSurfaceVariant),
+                    loc.translate('no_children_title'),
+                    style: const TextStyle(color: SafeRouteColors.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -47,20 +49,20 @@ class PassengerManifestSheet extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Total: ${students.length} Students',
+                    '${loc.manifestTitle}: ${students.length}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 13.5,
                       color: SafeRouteColors.deepNavy,
                     ),
                   ),
                   Row(
                     children: [
-                      _buildCountBadge('$boardedCount Boarded', SafeRouteColors.safetyGreen),
-                      const SizedBox(width: 8),
-                      _buildCountBadge('$droppedCount Dropped', SafeRouteColors.blue),
-                      const SizedBox(width: 8),
-                      _buildCountBadge('$absentCount Absent', SafeRouteColors.error),
+                      _buildCountBadge('$boardedCount ${loc.boarded}', SafeRouteColors.safetyGreen),
+                      const SizedBox(width: 6),
+                      _buildCountBadge('$droppedCount ${loc.dropped}', SafeRouteColors.blue),
+                      const SizedBox(width: 6),
+                      _buildCountBadge('$absentCount ${loc.absent}', SafeRouteColors.error),
                     ],
                   ),
                 ],
@@ -125,43 +127,43 @@ class PassengerManifestSheet extends ConsumerWidget {
                                 .setStatus(student.id, newStatus);
                           },
                           itemBuilder: (context) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'boarded',
                               child: Row(
                                 children: [
-                                  Icon(Icons.check_circle, color: SafeRouteColors.safetyGreen, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Boarded'),
+                                  const Icon(Icons.check_circle, color: SafeRouteColors.safetyGreen, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(loc.boarded),
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'dropped_off',
                               child: Row(
                                 children: [
-                                  Icon(Icons.home, color: SafeRouteColors.blue, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Dropped Off'),
+                                  const Icon(Icons.home, color: SafeRouteColors.blue, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(loc.dropped),
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'absent',
                               child: Row(
                                 children: [
-                                  Icon(Icons.cancel, color: SafeRouteColors.error, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Absent'),
+                                  const Icon(Icons.cancel, color: SafeRouteColors.error, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(loc.absent),
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'pending',
                               child: Row(
                                 children: [
-                                  Icon(Icons.schedule, color: SafeRouteColors.disabled, size: 18),
-                                  SizedBox(width: 8),
-                                  Text('Pending'),
+                                  const Icon(Icons.schedule, color: SafeRouteColors.disabled, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(loc.pending),
                                 ],
                               ),
                             ),
@@ -180,7 +182,7 @@ class PassengerManifestSheet extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  _formatStatusLabel(currentStatus),
+                                  _formatStatusLabel(currentStatus, loc),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -243,16 +245,17 @@ class PassengerManifestSheet extends ConsumerWidget {
     }
   }
 
-  static String _formatStatusLabel(String status) {
+  static String _formatStatusLabel(String status, dynamic loc) {
     switch (status) {
       case 'boarded':
-        return 'Boarded';
+        return loc.boarded;
       case 'dropped_off':
-        return 'Dropped';
+        return loc.dropped;
       case 'absent':
-        return 'Absent';
+        return loc.absent;
       default:
-        return 'Pending';
+        return loc.pending;
     }
   }
 }
+

@@ -91,6 +91,33 @@ class AppLocalizations {
       'slow': 'Slow',
       'normal': 'Normal',
       'fast': 'Fast',
+      'driver_appbar_title': 'SafeRoute Driver',
+      'driver_prefix': 'Driver: {name}',
+      'no_bus_assigned': 'No Bus Assigned',
+      'no_bus_assigned_desc': 'Please contact school operations to assign a vehicle to your driver profile.',
+      'live_gps_broadcasting': 'LIVE GPS BROADCASTING',
+      'gps_paused': 'GPS PAUSED',
+      'delay_button': 'Delay',
+      'sos_button': 'SOS Alert',
+      'report_delay_title': 'Report Bus Delay',
+      'emergency_sos_title': 'Emergency SOS Alert',
+      'delay_dialog_subtitle': 'Notify parents instantly about delay timing:',
+      'sos_dialog_subtitle': 'Select emergency type to immediately alert parents and school admins:',
+      'alert_reason_label': 'Alert Reason / Category:',
+      'recipient_target_label': 'Send Alert To:',
+      'all_parents_broadcast': 'All Parents (Broadcast)',
+      'specific_parent': 'Specific Student\'s Parent',
+      'select_student_label': 'Select Student / Stop:',
+      'custom_reason_label': 'Type Custom Reason / Title *',
+      'custom_reason_hint': 'e.g. Tree fallen on road / Route diversion',
+      'delay_duration_label': 'Select Delay Duration (Quick Pick):',
+      'additional_details_label': 'Additional Details (Optional)',
+      'additional_details_hint_delay': 'e.g. Heavy traffic near Sony Signal, moving slowly',
+      'additional_details_hint_sos': 'e.g. Flat tire on 80ft Road, waiting for mechanic',
+      'send_delay_btn': 'Send Delay Notice',
+      'broadcast_sos_btn': 'Broadcast SOS',
+      'end_trip_dialog_title': 'End Trip?',
+      'end_trip_dialog_msg': 'Are you sure you want to finish this trip? Live GPS broadcasting will stop and parents will be notified that the trip has concluded.',
       'admin_fleet_overview': 'Fleet Command Center',
       'admin_buses': 'Fleet Buses',
       'admin_drivers': 'Drivers Registry',
@@ -181,6 +208,33 @@ class AppLocalizations {
       'slow': 'धीमा',
       'normal': 'सामान्य',
       'fast': 'तेज',
+      'driver_appbar_title': 'सेफरूट ड्राइवर',
+      'driver_prefix': 'ड्राइवर: {name}',
+      'no_bus_assigned': 'कोई बस आवंटित नहीं है',
+      'no_bus_assigned_desc': 'कृपया अपने ड्राइवर प्रोफ़ाइल में वाहन असाइन करने के लिए स्कूल प्रशासन से संपर्क करें।',
+      'live_gps_broadcasting': 'लाइव जीपीएस चालू है',
+      'gps_paused': 'जीपीएस रुका हुआ है',
+      'delay_button': 'देरी',
+      'sos_button': 'एसओएस अलर्ट',
+      'report_delay_title': 'बस में देरी की सूचना दें',
+      'emergency_sos_title': 'आपातकालीन एसओएस चेतावनी',
+      'delay_dialog_subtitle': 'अभिभावकों को तुरंत बस में देरी की सूचना दें:',
+      'sos_dialog_subtitle': 'अभिभावकों और स्कूल प्रशासन को तुरंत अलर्ट करने के लिए आपातकाल प्रकार चुनें:',
+      'alert_reason_label': 'अलर्ट का कारण / श्रेणी:',
+      'recipient_target_label': 'अलर्ट किसे भेजें:',
+      'all_parents_broadcast': 'सभी अभिभावक (प्रसारण)',
+      'specific_parent': 'विशिष्ट छात्र के अभिभावक',
+      'select_student_label': 'छात्र / स्टॉप चुनें:',
+      'custom_reason_label': 'कस्टम कारण / शीर्षक लिखें *',
+      'custom_reason_hint': 'उदा. सड़क पर पेड़ गिर गया / मार्ग परिवर्तन',
+      'delay_duration_label': 'देरी का समय चुनें:',
+      'additional_details_label': 'अतिरिक्त विवरण (वैकल्पिक)',
+      'additional_details_hint_delay': 'उदा. सिग्नल पर भारी ट्रैफिक, धीरे चल रही है',
+      'additional_details_hint_sos': 'उदा. टायर पंक्चर हो गया, मैकेनिक का इंतजार है',
+      'send_delay_btn': 'देरी की सूचना भेजें',
+      'broadcast_sos_btn': 'एसओएस भेजें',
+      'end_trip_dialog_title': 'यात्रा समाप्त करें?',
+      'end_trip_dialog_msg': 'क्या आप वाकई यह यात्रा समाप्त करना चाहते हैं? लाइव जीपीएस रुक जाएगा और अभिभावकों को सूचित कर दिया जाएगा।',
       'admin_fleet_overview': 'फ्लीट कमांड सेंटर',
       'admin_buses': 'स्कूल बसें',
       'admin_drivers': 'ड्राइवर सूची',
@@ -271,6 +325,33 @@ class AppLocalizations {
       'slow': 'हळू',
       'normal': 'सामान्य',
       'fast': 'जलद',
+      'driver_appbar_title': 'सेफरूट चालक',
+      'driver_prefix': 'चालक: {name}',
+      'no_bus_assigned': 'कोणतीही बस नेमलेली नाही',
+      'no_bus_assigned_desc': 'कृपया आपल्या चालक प्रोफाईलमध्ये वाहन जोडण्यासाठी शाळा प्रशासनाशी संपर्क साधा.',
+      'live_gps_broadcasting': 'थेट जीपीएस सुरू आहे',
+      'gps_paused': 'जीपीएस थांबवले आहे',
+      'delay_button': 'उशीर',
+      'sos_button': 'एसओएस अलर्ट',
+      'report_delay_title': 'बसला झालेल्या उशीराची माहिती द्या',
+      'emergency_sos_title': 'आपत्कालीन एसओएस अलर्ट',
+      'delay_dialog_subtitle': 'पालकांना त्वरित बस उशीराची माहिती द्या:',
+      'sos_dialog_subtitle': 'पालक आणि शाळा प्रशासनाला त्वरित अलर्ट करण्यासाठी आपत्कालीन प्रकार निवडा:',
+      'alert_reason_label': 'अलर्टचे कारण / प्रकार:',
+      'recipient_target_label': 'अलर्ट कोणाला पाठवायचे:',
+      'all_parents_broadcast': 'सर्व पालक (प्रसारण)',
+      'specific_parent': 'विशिष्ट विद्यार्थ्याचे पालक',
+      'select_student_label': 'विद्यार्थी / थांबा निवडा:',
+      'custom_reason_label': 'स्वतःचे कारण / शीर्षक लिहा *',
+      'custom_reason_hint': 'उदा. रस्त्यावर झाड पडले / मार्ग बदल',
+      'delay_duration_label': 'उशीराची वेळ निवडा:',
+      'additional_details_label': 'अधिक तपशील (ऐच्छिक)',
+      'additional_details_hint_delay': 'उदा. सिग्नलजवळ प्रचंड ट्रॅफिक, हळू चालली आहे',
+      'additional_details_hint_sos': 'उदा. टायर पंक्चर झाला, मेकॅनिकची वाट पाहत आहे',
+      'send_delay_btn': 'उशीराची सूचना पाठवा',
+      'broadcast_sos_btn': 'एसओएस पाठवा',
+      'end_trip_dialog_title': 'प्रवास समाप्त करायचा?',
+      'end_trip_dialog_msg': 'तुम्हाला खात्री आहे की तुम्ही हा प्रवास समाप्त करू इच्छिता? थेट जीपीएस थांबेल आणि पालकांना प्रवास पूर्ण झाल्याची माहिती दिली जाईल.',
       'admin_fleet_overview': 'फ्लीट नियंत्रण केंद्र',
       'admin_buses': 'शाळा बसेस',
       'admin_drivers': 'चालक यादी',
@@ -375,4 +456,31 @@ class AppLocalizations {
   String get slow => translate('slow');
   String get normal => translate('normal');
   String get fast => translate('fast');
+  String get driverAppbarTitle => translate('driver_appbar_title');
+  String driverPrefix(String name) => translate('driver_prefix', {'name': name});
+  String get noBusAssigned => translate('no_bus_assigned');
+  String get noBusAssignedDesc => translate('no_bus_assigned_desc');
+  String get liveGpsBroadcasting => translate('live_gps_broadcasting');
+  String get gpsPaused => translate('gps_paused');
+  String get delayButton => translate('delay_button');
+  String get sosButton => translate('sos_button');
+  String get reportDelayTitle => translate('report_delay_title');
+  String get emergencySosTitle => translate('emergency_sos_title');
+  String get delayDialogSubtitle => translate('delay_dialog_subtitle');
+  String get sosDialogSubtitle => translate('sos_dialog_subtitle');
+  String get alertReasonLabel => translate('alert_reason_label');
+  String get recipientTargetLabel => translate('recipient_target_label');
+  String get allParentsBroadcast => translate('all_parents_broadcast');
+  String get specificParent => translate('specific_parent');
+  String get selectStudentLabel => translate('select_student_label');
+  String get customReasonLabel => translate('custom_reason_label');
+  String get customReasonHint => translate('custom_reason_hint');
+  String get delayDurationLabel => translate('delay_duration_label');
+  String get additionalDetailsLabel => translate('additional_details_label');
+  String get additionalDetailsHintDelay => translate('additional_details_hint_delay');
+  String get additionalDetailsHintSos => translate('additional_details_hint_sos');
+  String get sendDelayBtn => translate('send_delay_btn');
+  String get broadcastSosBtn => translate('broadcast_sos_btn');
+  String get endTripDialogTitle => translate('end_trip_dialog_title');
+  String get endTripDialogMsg => translate('end_trip_dialog_msg');
 }

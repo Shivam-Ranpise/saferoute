@@ -28,7 +28,12 @@ class FakeDriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>>
   Future<void> endTrip() async {}
 
   @override
-  Future<void> triggerEmergency(String title, String description) async {}
+  Future<void> triggerEmergency(
+    String title,
+    String description, {
+    String? targetParentProfileId,
+    String? targetChildId,
+  }) async {}
 }
 
 void main() {
