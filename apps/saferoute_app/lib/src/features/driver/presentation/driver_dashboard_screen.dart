@@ -31,6 +31,13 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
     );
   }
 
+  void _showDelayDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const EmergencyDialog(isDelayMode: true),
+    );
+  }
+
   void _confirmEndTrip() {
     showDialog(
       context: context,
@@ -435,17 +442,33 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                                   ],
                                 ),
                               ),
-                              TextButton.icon(
-                                style: TextButton.styleFrom(
-                                  foregroundColor: SafeRouteColors.error,
-                                ),
-                                icon: const Icon(Icons.warning_rounded,
-                                    size: 18),
-                                label: const Text(
-                                  'SOS Alert',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                onPressed: _showEmergencyDialog,
+                              Row(
+                                children: [
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: const Color(0xFFD97706),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                                    ),
+                                    icon: const Icon(Icons.timer_outlined, size: 16),
+                                    label: const Text(
+                                      'Delay',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                    onPressed: _showDelayDialog,
+                                  ),
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: SafeRouteColors.error,
+                                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                                    ),
+                                    icon: const Icon(Icons.warning_rounded, size: 16),
+                                    label: const Text(
+                                      'SOS Alert',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                    onPressed: _showEmergencyDialog,
+                                  ),
+                                ],
                               ),
                             ],
                           ),

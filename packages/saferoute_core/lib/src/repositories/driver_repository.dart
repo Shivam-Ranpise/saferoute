@@ -321,7 +321,7 @@ class DriverRepository {
     }
   }
 
-  /// Triggers an emergency notification event linked to the trip.
+  /// Triggers an emergency notification event linked to the trip and delivers to parents.
   Future<void> triggerEmergencyAlert({
     required String organizationId,
     required String tripId,
@@ -329,7 +329,8 @@ class DriverRepository {
     required String description,
   }) async {
     try {
-      await SupabaseService.client
+      final now = DateTime.now().toIso8601String();
+      final eventRes = await SupabaseService.client
           .from(AppConstants.tableNotificationEvents)
           .insert({
             'organization_id': organizationId,
@@ -338,10 +339,39 @@ class DriverRepository {
             'message': description,
             'trip_id': tripId,
             'priority': 'URGENT',
-            'created_at': DateTime.now().toIso8601String(),
-          });
+            'created_at': now,
+          })
+          .select()
+          .single();
 
-      AppLogger.info('Emergency alert triggered for trip: $tripId',
+      final eventId = eventRes['id'];
+
+      // Dispatch deliveries to enrolled parents
+      try {
+        final parents = await SupabaseService.client
+            .from(AppConstants.tableParents)
+            .select('id, profile_id')
+            .eq('organization_id', organizationId);
+
+        if (parents.isNotEmpty) {
+          final deliveries = parents.map((p) => {
+            'notification_event_id': eventId,
+            'organization_id': organizationId,
+            'recipient_profile_id': p['profile_id'] ?? p['id'],
+            'channel': 'PUSH',
+            'status': 'SENT',
+            'created_at': now,
+          }).toList();
+
+          await SupabaseService.client
+              .from(AppConstants.tableNotificationDeliveries)
+              .insert(deliveries);
+        }
+      } catch (delErr) {
+        AppLogger.warning('Could not batch insert emergency deliveries: $delErr', context: 'DriverRepository');
+      }
+
+      AppLogger.info('Emergency alert triggered for trip: $tripId with deliveries dispatched',
           context: 'DriverRepository');
     } catch (e) {
       AppLogger.error('Failed to trigger emergency alert: $tripId',

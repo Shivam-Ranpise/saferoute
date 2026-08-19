@@ -29,6 +29,19 @@ class _NotificationAuditScreenState
   bool _sendCustomSms = false;
   bool _isSendingCustom = false;
 
+  String _selectedTitlePreset = 'School Announcement';
+  final List<String> _titlePresets = [
+    'School Announcement',
+    '🚨 Urgent Emergency Alert',
+    '🌧️ Weather & Rain Delay Notice',
+    '⏱️ Bus Route Delay Notice',
+    '🎉 Holiday / Early Dismissal Notice',
+    '🔧 Bus Breakdown / Maintenance',
+    '🏆 Sports Day & Event Circular',
+    'Parent-Teacher Meeting (PTM) Notice',
+    'Other (Custom Headline)',
+  ];
+
   // Channel toggle rules for school events
   bool _busApproachingPush = true;
   bool _busApproachingWhatsapp = true;
@@ -167,7 +180,12 @@ class _NotificationAuditScreenState
   }
 
   Future<void> _sendCustomNotification(Organization org) async {
-    final title = _customTitleController.text.trim();
+    final String title;
+    if (_selectedTitlePreset != 'Other (Custom Headline)') {
+      title = _selectedTitlePreset;
+    } else {
+      title = _customTitleController.text.trim();
+    }
     final message = _customMessageController.text.trim();
 
     if (title.isEmpty || message.isEmpty) {
@@ -655,16 +673,66 @@ class _NotificationAuditScreenState
                     ],
                   ),
 
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: _customTitleController,
-                    decoration: InputDecoration(
-                      labelText: 'Notification Headline / Title *',
-                      prefixIcon: const Icon(Icons.title_rounded),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
+                  // Category / Title Preset Dropdown
+                  const Text(
+                    'Notification Category / Title:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: _selectedTitlePreset,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.label_important_outline_rounded, color: AdminColors.deepNavy),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                    items: _titlePresets.map((p) {
+                      return DropdownMenuItem<String>(
+                        value: p,
+                        child: Text(
+                          p,
+                          style: TextStyle(
+                            fontWeight: p == 'Other (Custom Headline)' ? FontWeight.bold : FontWeight.normal,
+                            color: p == 'Other (Custom Headline)' ? AdminColors.deepNavy : AdminColors.textPrimary,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() {
+                          _selectedTitlePreset = val;
+                          if (val != 'Other (Custom Headline)') {
+                            _customTitleController.text = val;
+                          } else {
+                            _customTitleController.clear();
+                          }
+                        });
+                        setState(() {
+                          _selectedTitlePreset = val;
+                          if (val != 'Other (Custom Headline)') {
+                            _customTitleController.text = val;
+                          } else {
+                            _customTitleController.clear();
+                          }
+                        });
+                      }
+                    },
+                  ),
+
+                  // If 'Other' is selected, allow freeform text entry
+                  if (_selectedTitlePreset == 'Other (Custom Headline)') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _customTitleController,
+                      decoration: InputDecoration(
+                        labelText: 'Custom Headline / Title *',
+                        hintText: 'e.g. Science Exhibition Timings',
+                        prefixIcon: const Icon(Icons.title_rounded),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 16),
 
