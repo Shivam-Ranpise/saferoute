@@ -358,8 +358,85 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                       strokeWidth: 2,
                     ),
                   )
-                : const Text('Save Preferences'),
+                : Text(loc.saveButton),
           ),
+          const SizedBox(height: 16),
+
+          // Sign Out Button
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: SafeRouteColors.error,
+              side: const BorderSide(color: SafeRouteColors.error),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: const Icon(Icons.logout_rounded, size: 18),
+            label: Text(
+              loc.logoutButton,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (dialogCtx) => Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: SafeRouteColors.errorLight,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.logout_rounded, color: SafeRouteColors.error, size: 32),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Sign Out',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: SafeRouteColors.deepNavy),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Are you sure you want to sign out of your account?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: SafeRouteColors.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.pop(dialogCtx),
+                                child: const Text('Cancel'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: SafeRouteColors.error,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(dialogCtx);
+                                  ref.read(authProvider.notifier).signOut();
+                                },
+                                child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );

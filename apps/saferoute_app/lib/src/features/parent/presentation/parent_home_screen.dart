@@ -260,174 +260,10 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.translate_rounded, color: Colors.white),
-            tooltip: 'Language / भाषा',
-            onSelected: (code) {
-              ref.read(appLocaleProvider.notifier).setLanguage(code);
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'en', child: Text('🇬🇧 English')),
-              PopupMenuItem(value: 'hi', child: Text('🇮🇳 हिंदी (Hindi)')),
-              PopupMenuItem(value: 'mr', child: Text('🇮🇳 मराठी (Marathi)')),
-            ],
-          ),
           IconButton(
             icon: const Icon(Icons.record_voice_over_rounded, color: Colors.white),
             tooltip: 'Voice Alerts (TTS)',
             onPressed: () => context.push('/parent/voice-settings'),
-          ),
-          IconButton(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications_rounded, color: Colors.white),
-                if (unreadCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: SafeRouteColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 14,
-                        minHeight: 14,
-                      ),
-                      child: Text(
-                        unreadCount > 9 ? '9+' : '$unreadCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            tooltip: 'Notifications',
-            onPressed: () => context.push('/parent/notifications'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit_location_alt_rounded, color: SafeRouteColors.yellow),
-            tooltip: 'Edit Child Stop',
-            onPressed: () {
-              final child = ref.read(selectedChildProvider);
-              if (child != null) {
-                context.push('/parent/pickup-location/${child.id}');
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white70),
-            tooltip: 'Sign Out',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => Dialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  elevation: 8,
-                  backgroundColor: Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: SafeRouteColors.error.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.logout_rounded,
-                                color: SafeRouteColors.error,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Sign Out',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: SafeRouteColors.deepNavy,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          'Are you sure you want to sign out of SafeRoute?',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  side: BorderSide(color: Colors.grey.shade300),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(
-                                  'Cancel',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade700,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: SafeRouteColors.error,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  ref.read(authProvider.notifier).signOut();
-                                },
-                                child: const Text(
-                                  'Sign Out',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
           ),
         ],
       ),
@@ -524,6 +360,129 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
               ],
             ),
           ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                // 1. Live Tracking (Home)
+                _buildNavItem(
+                  icon: Icons.map_rounded,
+                  label: 'Live Track',
+                  isSelected: true,
+                  onTap: () {},
+                ),
+
+                // 2. Notifications
+                _buildNavItem(
+                  icon: Icons.notifications_rounded,
+                  label: 'Notifications',
+                  badgeCount: unreadCount,
+                  isSelected: false,
+                  onTap: () => context.push('/parent/notifications'),
+                ),
+
+                // 3. Child Location / Stop
+                _buildNavItem(
+                  icon: Icons.pin_drop_rounded,
+                  label: 'Location',
+                  isSelected: false,
+                  onTap: () {
+                    final child = ref.read(selectedChildProvider);
+                    if (child != null) {
+                      context.push('/parent/pickup-location/${child.id}');
+                    } else {
+                      final children = childrenAsync.value ?? [];
+                      if (children.isNotEmpty) {
+                        context.push('/parent/pickup-location/${children.first.id}');
+                      }
+                    }
+                  },
+                ),
+
+                // 4. Unified Settings (Language, Preferences, TTS, Logout)
+                _buildNavItem(
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
+                  isSelected: false,
+                  onTap: () => context.push('/parent/settings'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    int badgeCount = 0,
+  }) {
+    final color = isSelected ? SafeRouteColors.deepNavy : Colors.grey.shade500;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, color: color, size: 24),
+                if (badgeCount > 0)
+                  Positioned(
+                    right: -6,
+                    top: -3,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: SafeRouteColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                      child: Text(
+                        badgeCount > 9 ? '9+' : '$badgeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );
