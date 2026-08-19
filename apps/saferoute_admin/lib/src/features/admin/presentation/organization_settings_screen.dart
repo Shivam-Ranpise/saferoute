@@ -419,7 +419,7 @@ class _OrganizationSettingsScreenState
     );
   }
 
-  // ── Tab 2: Weekly Operating Schedule (Configurable per Day) ────────────────
+  // ── Tab 2: Weekly Operating Schedule (Interactive DataTable) ───────────────
   Widget _buildOperatingHoursTab() {
     final daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -430,137 +430,259 @@ class _OrganizationSettingsScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.calendar_month_rounded, color: AdminColors.deepNavy, size: 22),
-                  SizedBox(width: 10),
-                  Text(
-                    'Configurable Daily Operating Hours (Mon – Sun)',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Configure specific start and end times for each day of the week (e.g. Mon-Fri 10-5, Saturday 7-11 morning)',
-                style: TextStyle(fontSize: 12, color: AdminColors.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              ...daysOfWeek.map((day) {
-                final dayData = _dailySchedule[day]!;
-                final isEnabled = dayData['enabled'] as bool;
-                final startTime = dayData['start_time'] as String;
-                final endTime = dayData['end_time'] as String;
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                  decoration: const BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AdminColors.border, width: 0.5)),
-                  ),
-                  child: Row(
+                  const Row(
                     children: [
-                      Switch(
-                        value: isEnabled,
-                        activeColor: AdminColors.deepNavy,
-                        onChanged: (val) {
+                      Icon(Icons.calendar_month_rounded, color: AdminColors.deepNavy, size: 24),
+                      SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Weekly School Operating Schedule Table',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Configure specific start and end times for each day of the week (e.g. Mon-Fri 10-5, Saturday 7-11 morning)',
+                            style: TextStyle(fontSize: 12, color: AdminColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                        icon: const Icon(Icons.flash_on_rounded, size: 16, color: AdminColors.deepNavy),
+                        label: const Text('Set Mon–Fri 10–5', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
                           setState(() {
-                            _dailySchedule[day]!['enabled'] = val;
+                            for (final d in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']) {
+                              _dailySchedule[d]!['enabled'] = true;
+                              _dailySchedule[d]!['start_time'] = '10:00';
+                              _dailySchedule[d]!['end_time'] = '17:00';
+                            }
                           });
                         },
                       ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        width: 110,
-                        child: Text(
-                          day,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: isEnabled ? AdminColors.textPrimary : Colors.grey,
-                          ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
+                        icon: const Icon(Icons.wb_sunny_rounded, size: 16, color: Color(0xFFF97316)),
+                        label: const Text('Set Sat 7–11 AM', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          setState(() {
+                            _dailySchedule['Saturday']!['enabled'] = true;
+                            _dailySchedule['Saturday']!['start_time'] = '07:00';
+                            _dailySchedule['Saturday']!['end_time'] = '11:00';
+                          });
+                        },
                       ),
-                      if (isEnabled) ...[
-                        const Icon(Icons.schedule_rounded, size: 16, color: AdminColors.textSecondary),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: () async {
-                            final parts = startTime.split(':');
-                            final initialTime = TimeOfDay(
-                              hour: int.tryParse(parts[0]) ?? 10,
-                              minute: int.tryParse(parts[1]) ?? 0,
-                            );
-                            final picked = await showTimePicker(context: context, initialTime: initialTime);
-                            if (picked != null) {
-                              final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-                              setState(() {
-                                _dailySchedule[day]!['start_time'] = formatted;
-                              });
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AdminColors.border),
-                            ),
-                            child: Text(
-                              _formatTimeString(startTime),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('to', style: TextStyle(color: AdminColors.textSecondary)),
-                        ),
-                        InkWell(
-                          onTap: () async {
-                            final parts = endTime.split(':');
-                            final initialTime = TimeOfDay(
-                              hour: int.tryParse(parts[0]) ?? 17,
-                              minute: int.tryParse(parts[1]) ?? 0,
-                            );
-                            final picked = await showTimePicker(context: context, initialTime: initialTime);
-                            if (picked != null) {
-                              final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-                              setState(() {
-                                _dailySchedule[day]!['end_time'] = formatted;
-                              });
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AdminColors.border),
-                            ),
-                            child: Text(
-                              _formatTimeString(endTime),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                          ),
-                        ),
-                      ] else ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Closed / Off Day',
-                            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
-                );
-              }),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+
+              // Interactive DataTable for 7-Day Schedule
+              LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: DataTable(
+                      columnSpacing: 24,
+                      horizontalMargin: 16,
+                      headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                      columns: const [
+                        DataColumn(label: Text('Day of Week', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text('Operating Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text('Opening / Start Time', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text('Closing / End Time', style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text('Quick Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                      ],
+                      rows: daysOfWeek.map((day) {
+                        final dayData = _dailySchedule[day]!;
+                        final isEnabled = dayData['enabled'] as bool;
+                        final startTime = dayData['start_time'] as String;
+                        final endTime = dayData['end_time'] as String;
+
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              Row(
+                                children: [
+                                  Icon(
+                                    day == 'Sunday' || day == 'Saturday'
+                                        ? Icons.weekend_rounded
+                                        : Icons.calendar_today_rounded,
+                                    size: 16,
+                                    color: isEnabled ? AdminColors.deepNavy : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    day,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: isEnabled ? AdminColors.textPrimary : Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            DataCell(
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: isEnabled,
+                                    activeColor: AdminColors.deepNavy,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _dailySchedule[day]!['enabled'] = val ?? false;
+                                      });
+                                    },
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isEnabled
+                                          ? AdminColors.safetyGreen.withValues(alpha: 0.15)
+                                          : Colors.red.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      isEnabled ? 'Open / Active' : 'Closed',
+                                      style: TextStyle(
+                                        color: isEnabled ? AdminColors.safetyGreen : Colors.red,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            DataCell(
+                              isEnabled
+                                  ? InkWell(
+                                      borderRadius: BorderRadius.circular(6),
+                                      onTap: () async {
+                                        final parts = startTime.split(':');
+                                        final initialTime = TimeOfDay(
+                                          hour: int.tryParse(parts[0]) ?? 10,
+                                          minute: int.tryParse(parts[1]) ?? 0,
+                                        );
+                                        final picked = await showTimePicker(context: context, initialTime: initialTime);
+                                        if (picked != null) {
+                                          final formatted =
+                                              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                          setState(() {
+                                            _dailySchedule[day]!['start_time'] = formatted;
+                                          });
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: AdminColors.border),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.access_time_filled_rounded, size: 14, color: AdminColors.deepNavy),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _formatTimeString(startTime),
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : const Text('—', style: TextStyle(color: Colors.grey)),
+                            ),
+                            DataCell(
+                              isEnabled
+                                  ? InkWell(
+                                      borderRadius: BorderRadius.circular(6),
+                                      onTap: () async {
+                                        final parts = endTime.split(':');
+                                        final initialTime = TimeOfDay(
+                                          hour: int.tryParse(parts[0]) ?? 17,
+                                          minute: int.tryParse(parts[1]) ?? 0,
+                                        );
+                                        final picked = await showTimePicker(context: context, initialTime: initialTime);
+                                        if (picked != null) {
+                                          final formatted =
+                                              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                                          setState(() {
+                                            _dailySchedule[day]!['end_time'] = formatted;
+                                          });
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: AdminColors.border),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.access_time_rounded, size: 14, color: AdminColors.deepNavy),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _formatTimeString(endTime),
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : const Text('—', style: TextStyle(color: Colors.grey)),
+                            ),
+                            DataCell(
+                              Row(
+                                children: [
+                                  TextButton(
+                                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                                    onPressed: () {
+                                      setState(() {
+                                        _dailySchedule[day]!['enabled'] = !_dailySchedule[day]!['enabled'];
+                                      });
+                                    },
+                                    child: Text(
+                                      isEnabled ? 'Mark Closed' : 'Mark Open',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isEnabled ? Colors.redAccent : AdminColors.safetyGreen,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
