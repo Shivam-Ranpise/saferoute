@@ -163,6 +163,7 @@ class DriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>> {
   Future<void> triggerEmergency(
     String title,
     String description, {
+    bool isDelay = false,
     String? targetParentProfileId,
     String? targetChildId,
   }) async {
@@ -174,8 +175,10 @@ class DriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>> {
       await _repository.triggerEmergencyAlert(
         organizationId: bundle.driver.organizationId,
         tripId: currentTrip.id,
+        busId: bundle.bus?.id ?? '',
         title: title,
         description: description,
+        isDelay: isDelay,
         targetParentProfileId: targetParentProfileId,
         targetChildId: targetChildId,
       );

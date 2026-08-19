@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
@@ -37,6 +38,119 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
       context: context,
       builder: (context) => const EmergencyDialog(isDelayMode: true),
     );
+  }
+
+  /// Checks GPS permission & location services before starting a trip.
+  /// If disabled, opens Android's system location settings dialog.
+  Future<void> _startTripWithGpsCheck() async {
+    // 1. Check if location services are enabled at the OS level
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (!mounted) return;
+      // Show a dialog explaining why location is needed, then open settings
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.location_off_rounded, color: Colors.orange, size: 26),
+              SizedBox(width: 10),
+              Text('Location Required', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'GPS location must be enabled to start a trip.\n\n'
+            'Parents track the bus in real-time through your device location. '
+            'Please turn on Location Services to continue.',
+            style: TextStyle(fontSize: 13.5, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: SafeRouteColors.safetyGreen,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.settings_rounded, size: 18),
+              label: const Text('Enable GPS', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                await Geolocator.openLocationSettings();
+              },
+            ),
+          ],
+        ),
+      );
+      // After the user returns from settings, re-check
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return; // Still off — abort
+    }
+
+    // 2. Check / request location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Location permission denied. Cannot start trip.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.gps_off_rounded, color: Colors.red, size: 26),
+              SizedBox(width: 10),
+              Text('Permission Blocked', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            'Location permission is permanently denied.\n\n'
+            'Please go to App Settings → Permissions → Location and set it to "Allow while using the app".',
+            style: TextStyle(fontSize: 13.5, height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: SafeRouteColors.deepNavy,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.app_settings_alt_rounded, size: 18),
+              label: const Text('App Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                await Geolocator.openAppSettings();
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // 3. All checks passed — start the trip
+    if (!mounted) return;
+    await ref.read(driverActiveTripProvider.notifier).startTrip();
   }
 
   void _confirmEndTrip() {
@@ -472,9 +586,7 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                               letterSpacing: 0.5,
                             ),
                           ),
-                          onPressed: () => ref
-                              .read(driverActiveTripProvider.notifier)
-                              .startTrip(),
+                          onPressed: _startTripWithGpsCheck,
                         ),
                       ),
                     ] else ...[

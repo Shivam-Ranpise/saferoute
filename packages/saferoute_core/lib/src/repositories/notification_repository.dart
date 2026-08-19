@@ -156,8 +156,10 @@ class NotificationRepository {
                 final List<NotificationItem> items = [];
                 for (final row in list) {
                   final delivery = NotificationDelivery.fromJson(row);
-                  if (delivery.recipientProfileId != null &&
-                      delivery.recipientProfileId != profileId) {
+                  // Include: deliveries targeted at this profile, OR broadcast deliveries (null recipient)
+                  final isForMe = delivery.recipientProfileId == null ||
+                      delivery.recipientProfileId == profileId;
+                  if (!isForMe) {
                     continue;
                   }
                   NotificationEvent? event;

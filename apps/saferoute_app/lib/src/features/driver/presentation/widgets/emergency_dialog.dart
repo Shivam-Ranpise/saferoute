@@ -191,6 +191,7 @@ class _EmergencyDialogState extends ConsumerState<EmergencyDialog> {
       await ref.read(driverActiveTripProvider.notifier).triggerEmergency(
             broadcastTitle,
             details,
+            isDelay: widget.isDelayMode || _isDelayType,
             targetParentProfileId: targetParentProfileId,
             targetChildId: targetChildId,
           );

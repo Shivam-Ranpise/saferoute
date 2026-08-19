@@ -31,6 +31,7 @@ class FakeDriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>>
   Future<void> triggerEmergency(
     String title,
     String description, {
+    bool isDelay = false,
     String? targetParentProfileId,
     String? targetChildId,
   }) async {}

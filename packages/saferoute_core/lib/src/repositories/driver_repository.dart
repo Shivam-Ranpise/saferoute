@@ -343,8 +343,10 @@ class DriverRepository {
   Future<void> triggerEmergencyAlert({
     required String organizationId,
     required String tripId,
+    required String busId,
     required String title,
     required String description,
+    bool isDelay = false,
     String? targetParentProfileId,
     String? targetChildId,
   }) async {
@@ -354,12 +356,12 @@ class DriverRepository {
           .from(AppConstants.tableNotificationEvents)
           .insert({
             'organization_id': organizationId,
-            'event_type': 'EMERGENCY',
+            'event_type': isDelay ? 'BUS_DELAY' : 'EMERGENCY',
             'title': title,
             'message': description,
             'trip_id': tripId,
             if (targetChildId != null) 'child_id': targetChildId,
-            'priority': 'URGENT',
+            'priority': isDelay ? 'STANDARD' : 'URGENT',
             'created_at': now,
           })
           .select()
@@ -384,17 +386,18 @@ class DriverRepository {
             .from(AppConstants.tableNotificationDeliveries)
             .insert(deliveries);
       } else {
-        // Broadcast to all enrolled parents
+        // Broadcast to all enrolled parents of this bus
         await _dispatchDeliveriesForEvent(
           organizationId: organizationId,
           eventId: eventId,
+          busId: busId,
         );
       }
 
-      AppLogger.info('Emergency alert triggered for trip: $tripId with deliveries dispatched (targetParent: $targetParentProfileId)',
+      AppLogger.info('Alert triggered for trip: $tripId (isDelay: $isDelay) deliveries dispatched (targetParent: $targetParentProfileId)',
           context: 'DriverRepository');
     } catch (e) {
-      AppLogger.error('Failed to trigger emergency alert: $tripId',
+      AppLogger.error('Failed to trigger alert: $tripId',
           error: e, context: 'DriverRepository');
       rethrow;
     }
@@ -413,15 +416,27 @@ class DriverRepository {
       // 1. Try finding parents whose children are assigned to this bus
       if (busId != null) {
         try {
+          // Step 1a: get all children for this bus
           final childrenRes = await SupabaseService.client
               .from(AppConstants.tableChildren)
-              .select('parent_id, parents(id, profile_id)')
-              .eq('bus_id', busId);
+              .select('parent_id')
+              .eq('bus_id', busId)
+              .eq('is_active', true);
 
-          for (final child in (childrenRes as List)) {
-            final parent = child['parents'] as Map<String, dynamic>?;
-            if (parent != null) {
-              final pid = parent['profile_id'] as String? ?? parent['id'] as String?;
+          final parentIds = (childrenRes as List)
+              .map((c) => c['parent_id'] as String?)
+              .whereType<String>()
+              .toSet();
+
+          if (parentIds.isNotEmpty) {
+            // Step 1b: fetch profile_ids for those parent records
+            final parentsRes = await SupabaseService.client
+                .from(AppConstants.tableParents)
+                .select('id, profile_id')
+                .inFilter('id', parentIds.toList());
+
+            for (final p in (parentsRes as List)) {
+              final pid = p['profile_id'] as String?;
               if (pid != null && pid.isNotEmpty) {
                 recipientProfileIds.add(pid);
               }
