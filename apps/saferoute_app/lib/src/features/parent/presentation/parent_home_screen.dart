@@ -232,6 +232,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     final profile = ref.watch(currentProfileProvider);
     final childrenAsync = ref.watch(parentChildrenStreamProvider);
     final unreadCount = ref.watch(unreadNotificationCountProvider);
+    final loc = ref.watch(appLocalizationsProvider);
 
     return Scaffold(
       backgroundColor: SafeRouteColors.deepNavy,
@@ -241,9 +242,9 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'SafeRoute',
-              style: TextStyle(
+            Text(
+              loc.appName,
+              style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
@@ -251,7 +252,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
             ),
             if (profile != null)
               Text(
-                'Welcome, ${profile.name}',
+                loc.welcome(profile.name),
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 12,
@@ -262,7 +263,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.record_voice_over_rounded, color: Colors.white),
-            tooltip: 'Voice Alerts (TTS)',
+            tooltip: loc.voiceSettingsTitle,
             onPressed: () => context.push('/parent/voice-settings'),
           ),
         ],
@@ -281,24 +282,24 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                     const Icon(Icons.child_care_rounded,
                         color: SafeRouteColors.yellow, size: 64),
                     const SizedBox(height: 16),
-                    const Text(
-                      'No Children Linked Yet',
-                      style: TextStyle(
+                    Text(
+                      loc.noChildrenTitle,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Please contact your school administrator to register and link your child to your account.',
+                    Text(
+                      loc.noChildrenSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white70, height: 1.4),
+                      style: const TextStyle(color: Colors.white70, height: 1.4),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Check Again'),
+                      label: Text(loc.checkAgain),
                       onPressed: () =>
                           ref.refresh(parentChildrenStreamProvider),
                     ),
@@ -355,7 +356,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => ref.refresh(parentChildrenStreamProvider),
-                  child: const Text('Retry'),
+                  child: Text(loc.retry),
                 ),
               ],
             ),
@@ -382,7 +383,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                 // 1. Live Tracking (Home)
                 _buildNavItem(
                   icon: Icons.map_rounded,
-                  label: 'Live Track',
+                  label: loc.liveTrack,
                   isSelected: true,
                   onTap: () {},
                 ),
@@ -390,7 +391,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                 // 2. Notifications
                 _buildNavItem(
                   icon: Icons.notifications_rounded,
-                  label: 'Notifications',
+                  label: loc.notifications,
                   badgeCount: unreadCount,
                   isSelected: false,
                   onTap: () => context.push('/parent/notifications'),
@@ -399,7 +400,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                 // 3. Child Location / Stop
                 _buildNavItem(
                   icon: Icons.pin_drop_rounded,
-                  label: 'Location',
+                  label: loc.location,
                   isSelected: false,
                   onTap: () {
                     final child = ref.read(selectedChildProvider);
@@ -417,7 +418,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
                 // 4. Unified Settings (Language, Preferences, TTS, Logout)
                 _buildNavItem(
                   icon: Icons.settings_rounded,
-                  label: 'Settings',
+                  label: loc.settings,
                   isSelected: false,
                   onTap: () => context.push('/parent/settings'),
                 ),

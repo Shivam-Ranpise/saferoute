@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
-
 
 /// Login screen — supports username, mobile number, or email + password.
 /// No self-registration. Accounts are created by school admin.
@@ -46,17 +46,87 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final loc = ref.watch(appLocalizationsProvider);
+    final currentLocale = ref.watch(appLocaleProvider);
 
     ref.listen(authProvider, (previous, next) {
-      if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: SafeRouteColors.error,
-            behavior: SnackBarBehavior.floating,
+      if (next.error != null && next.error!.isNotEmpty) {
+        final errorMessage = next.error!;
+        ref.read(authProvider.notifier).clearError();
+
+        showDialog(
+          context: context,
+          builder: (dialogCtx) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 8,
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: SafeRouteColors.error.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.lock_reset_rounded,
+                      color: SafeRouteColors.error,
+                      size: 36,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Invalid Credentials',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: SafeRouteColors.deepNavy,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    errorMessage.contains('Invalid') || errorMessage.contains('credentials')
+                        ? 'The username, mobile number or password you entered is incorrect. Please check your credentials and try again.'
+                        : errorMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: SafeRouteColors.deepNavy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(dialogCtx),
+                      child: const Text(
+                        'Try Again',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
-        ref.read(authProvider.notifier).clearError();
       }
     });
 
@@ -69,7 +139,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 48),
+                const SizedBox(height: 16),
+
+                // Top Language Switcher Bar
+                Align(
+                  alignment: Alignment.topRight,
+                  child: PopupMenuButton<String>(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    icon: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: SafeRouteColors.surfaceVariant.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: SafeRouteColors.outline),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.translate_rounded, size: 16, color: SafeRouteColors.deepNavy),
+                          const SizedBox(width: 6),
+                          Text(
+                            currentLocale.languageCode == 'mr'
+                                ? 'मराठी'
+                                : currentLocale.languageCode == 'hi'
+                                    ? 'हिंदी'
+                                    : 'English',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: SafeRouteColors.deepNavy,
+                            ),
+                          ),
+                          const Icon(Icons.arrow_drop_down, size: 16, color: SafeRouteColors.deepNavy),
+                        ],
+                      ),
+                    ),
+                    tooltip: 'Change Language / भाषा बदला',
+                    onSelected: (code) {
+                      ref.read(appLocaleProvider.notifier).setLanguage(code);
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'en', child: Text('🇬🇧 English')),
+                      PopupMenuItem(value: 'hi', child: Text('🇮🇳 हिंदी (Hindi)')),
+                      PopupMenuItem(value: 'mr', child: Text('🇮🇳 मराठी (Marathi)')),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
 
                 // Logo + Brand
                 Center(
@@ -79,19 +196,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         tag: 'saferoute_logo',
                         child: Image.asset(
                           'assets/images/saferoute_logo.png',
-                          width: 160,
-                          height: 120,
+                          width: 150,
+                          height: 110,
                           fit: BoxFit.contain,
                           errorBuilder: (_, __, ___) => const Icon(
                             Icons.directions_bus,
                             color: SafeRouteColors.blue,
-                            size: 80,
+                            size: 70,
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'SafeRoute',
+                        loc.appName,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               color: SafeRouteColors.deepNavy,
                               fontWeight: FontWeight.w700,
@@ -99,7 +216,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Every Child. Every Mile. Safely.',
+                        loc.appTagline,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: SafeRouteColors.onSurfaceVariant,
                             ),
@@ -108,7 +225,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   ),
                 ),
 
-                const SizedBox(height: 48),
+                const SizedBox(height: 36),
 
                 // Login Card
                 Container(
@@ -131,14 +248,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Sign In',
+                          loc.loginTitle,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 color: SafeRouteColors.deepNavy,
+                                fontWeight: FontWeight.bold,
                               ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Enter your username, mobile number, or email.',
+                          loc.loginSubtitle,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 24),
@@ -149,14 +267,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           keyboardType: TextInputType.text,
                           textInputAction: TextInputAction.next,
                           autocorrect: false,
-                          decoration: const InputDecoration(
-                            labelText: 'Username, Mobile or Email',
-                            prefixIcon: Icon(Icons.person_outline),
-                            hintText: 'e.g. superadmin or +919876543210',
+                          decoration: InputDecoration(
+                            labelText: loc.identifierLabel,
+                            prefixIcon: const Icon(Icons.person_outline),
+                            hintText: loc.identifierHint,
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your username, mobile, or email';
+                              return loc.identifierError;
                             }
                             if (value.trim().length < 3) {
                               return 'Identifier too short';
@@ -174,7 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _handleSignIn(),
                           decoration: InputDecoration(
-                            labelText: 'Password',
+                            labelText: loc.passwordLabel,
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -189,7 +307,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
+                              return loc.passwordError;
                             }
                             return null;
                           },
@@ -217,9 +335,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'Sign In',
-                                  style: TextStyle(
+                              : Text(
+                                  loc.signInButton,
+                                  style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
                                   ),

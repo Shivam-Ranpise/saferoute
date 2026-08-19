@@ -12,13 +12,33 @@ class AppLocalizations {
       'app_name': 'SafeRoute',
       'app_tagline': 'Every Child. Every Mile. Safely.',
       'login_title': 'Sign In',
-      'login_subtitle': 'Enter your registered institutional credentials',
-      'email_label': 'Email Address',
+      'login_subtitle': 'Enter your username, mobile number, or email.',
+      'identifier_label': 'Username, Mobile or Email',
+      'identifier_hint': 'e.g. parent or +919876543210',
+      'identifier_error': 'Please enter your username, mobile, or email',
       'password_label': 'Password',
+      'password_error': 'Please enter your password',
       'sign_in_button': 'Sign In',
+      'welcome_user': 'Welcome, {name}',
       'parent_home_title': 'Live Bus Tracking',
       'child_tracking': 'Child Live Tracking',
       'bus_status': 'Bus Status',
+      'live_track': 'Live Track',
+      'notifications': 'Notifications',
+      'location': 'Location',
+      'settings': 'Settings',
+      'set_location': 'Set Location',
+      'edit_stop': 'Edit Stop',
+      'set_stop': 'Set Stop',
+      'no_children_title': 'No Children Linked Yet',
+      'no_children_subtitle': 'Please contact your school administrator to register and link your child to your account.',
+      'check_again': 'Check Again',
+      'retry': 'Retry',
+      'bus_in_depot': 'Bus in Depot',
+      'bus_on_the_way': 'Bus On The Way',
+      'bus_approaching': 'Approaching Stop',
+      'bus_arrived': 'Arrived at Stop',
+      'safe_at_school': 'Safe at School',
       'bus_nearby_title': 'Bus Arriving Soon! 🚌',
       'bus_nearby_message': 'Bus is approx {distance} from {child_name}\'s stop.',
       'trip_active': 'Trip in Progress',
@@ -65,13 +85,33 @@ class AppLocalizations {
       'app_name': 'सेफरूट',
       'app_tagline': 'हर बच्चा। हर मील। सुरक्षित।',
       'login_title': 'साइन इन करें',
-      'login_subtitle': 'अपना पंजीकृत ईमेल और पासवर्ड दर्ज करें',
-      'email_label': 'ईमेल पता',
+      'login_subtitle': 'अपना उपयोगकर्ता नाम, मोबाइल नंबर या ईमेल दर्ज करें।',
+      'identifier_label': 'उपयोगकर्ता नाम, मोबाइल या ईमेल',
+      'identifier_hint': 'उदा. parent या +919876543210',
+      'identifier_error': 'कृपया अपना उपयोगकर्ता नाम, मोबाइल या ईमेल दर्ज करें',
       'password_label': 'पासवर्ड',
+      'password_error': 'कृपया अपना पासवर्ड दर्ज करें',
       'sign_in_button': 'साइन इन करें',
+      'welcome_user': 'स्वागत है, {name}',
       'parent_home_title': 'लाइव बस ट्रैकिंग',
       'child_tracking': 'बच्चे की लाइव ट्रैकिंग',
       'bus_status': 'बस की स्थिति',
+      'live_track': 'लाइव ट्रैक',
+      'notifications': 'सूचनाएं',
+      'location': 'स्टॉप स्थान',
+      'settings': 'सेटिंग्स',
+      'set_location': 'स्थान सेट करें',
+      'edit_stop': 'स्टॉप बदलें',
+      'set_stop': 'स्टॉप सेट करें',
+      'no_children_title': 'कोई बच्चा लिंक नहीं है',
+      'no_children_subtitle': 'कृपया अपने बच्चे को अपने खाते से जोड़ने के लिए स्कूल प्रशासक से संपर्क करें।',
+      'check_again': 'पुनः जांचें',
+      'retry': 'पुनः प्रयास करें',
+      'bus_in_depot': 'बस डिपो में है',
+      'bus_on_the_way': 'बस रास्ते में है',
+      'bus_approaching': 'स्टॉप के पास पहुंच रही है',
+      'bus_arrived': 'स्टॉप पर पहुंच गई',
+      'safe_at_school': 'स्कूल सुरक्षित पहुंच गए',
       'bus_nearby_title': 'बस जल्द ही आ रही है! 🚌',
       'bus_nearby_message': 'बस {child_name} के स्टॉप से लगभग {distance} दूर है।',
       'trip_active': 'यात्रा जारी है',
@@ -118,13 +158,33 @@ class AppLocalizations {
       'app_name': 'सेफरूट',
       'app_tagline': 'प्रत्येक मूल. प्रत्येक मैल. सुरक्षितपणे.',
       'login_title': 'साइन इन करा',
-      'login_subtitle': 'आपला नोंदणीकृत ईमेल आणि पासवर्ड प्रविष्ट करा',
-      'email_label': 'ईमेल पत्ता',
+      'login_subtitle': 'आपला वापरकर्ता नाव, मोबाईल क्रमांक किंवा ईमेल प्रविष्ट करा.',
+      'identifier_label': 'वापरकर्ता नाव, मोबाईल किंवा ईमेल',
+      'identifier_hint': 'उदा. parent किंवा +919876543210',
+      'identifier_error': 'कृपया आपले वापरकर्ता नाव, मोबाईल किंवा ईमेल प्रविष्ट करा',
       'password_label': 'पासवर्ड',
+      'password_error': 'कृपया आपला पासवर्ड प्रविष्ट करा',
       'sign_in_button': 'साइन इन करा',
+      'welcome_user': 'स्वागत आहे, {name}',
       'parent_home_title': 'थेट बस ट्रॅकिंग',
       'child_tracking': 'विद्यार्थी थेट ट्रॅकिंग',
       'bus_status': 'बसची स्थिती',
+      'live_track': 'थेट ट्रॅकिंग',
+      'notifications': 'सूचना',
+      'location': 'थांबा स्थान',
+      'settings': 'सेटिंग्ज',
+      'set_location': 'स्थान सेट करा',
+      'edit_stop': 'थांबा बदला',
+      'set_stop': 'थांबा सेट करा',
+      'no_children_title': 'कोणतेही मूल लिंक केलेले नाही',
+      'no_children_subtitle': 'कृपया आपल्या पाल्याला खात्याशी लिंक करण्यासाठी शाळा प्रशासकाशी संपर्क साधा.',
+      'check_again': 'पुन्हा तपासा',
+      'retry': 'पुन्हा प्रयत्न करा',
+      'bus_in_depot': 'बस डेपोमध्ये आहे',
+      'bus_on_the_way': 'बस मार्गावर आहे',
+      'bus_approaching': 'थांब्याजवळ पोहोचत आहे',
+      'bus_arrived': 'थांब्यावर पोहोचली',
+      'safe_at_school': 'शाळेत सुरक्षित पोहोचले',
       'bus_nearby_title': 'बस लवकरच पोहोचत आहे! 🚌',
       'bus_nearby_message': 'बस {child_name} च्या थांब्यापासून सुमारे {distance} अंतरावर आहे.',
       'trip_active': 'प्रवास सुरू आहे',
@@ -186,9 +246,34 @@ class AppLocalizations {
   // Convenience getters
   String get appName => translate('app_name');
   String get appTagline => translate('app_tagline');
+  String get loginTitle => translate('login_title');
+  String get loginSubtitle => translate('login_subtitle');
+  String get identifierLabel => translate('identifier_label');
+  String get identifierHint => translate('identifier_hint');
+  String get identifierError => translate('identifier_error');
+  String get passwordLabel => translate('password_label');
+  String get passwordError => translate('password_error');
+  String get signInButton => translate('sign_in_button');
+  String welcome(String name) => translate('welcome_user', {'name': name});
   String get parentHomeTitle => translate('parent_home_title');
   String get childTracking => translate('child_tracking');
   String get busStatus => translate('bus_status');
+  String get liveTrack => translate('live_track');
+  String get notifications => translate('notifications');
+  String get location => translate('location');
+  String get settings => translate('settings');
+  String get setLocation => translate('set_location');
+  String get editStop => translate('edit_stop');
+  String get setStop => translate('set_stop');
+  String get noChildrenTitle => translate('no_children_title');
+  String get noChildrenSubtitle => translate('no_children_subtitle');
+  String get checkAgain => translate('check_again');
+  String get retry => translate('retry');
+  String get busInDepot => translate('bus_in_depot');
+  String get busOnTheWay => translate('bus_on_the_way');
+  String get busApproaching => translate('bus_approaching');
+  String get busArrived => translate('bus_arrived');
+  String get safeAtSchool => translate('safe_at_school');
   String get tripActive => translate('trip_active');
   String get tripIdle => translate('trip_idle');
   String get tripCompleted => translate('trip_completed');

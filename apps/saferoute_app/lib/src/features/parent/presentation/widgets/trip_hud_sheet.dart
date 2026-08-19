@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:saferoute_core/saferoute_core.dart';
+import '../../../../providers/locale_provider.dart';
 import '../../../../theme/app_theme.dart';
 import '../../providers/parent_providers.dart';
 
@@ -14,6 +15,7 @@ class TripHudSheet extends ConsumerWidget {
     final telemetry = ref.watch(busTelemetryProvider);
     final busAsync = ref.watch(selectedChildBusProvider);
     final driverAsync = ref.watch(selectedChildDriverProfileProvider);
+    final loc = ref.watch(appLocalizationsProvider);
 
     if (child == null) {
       return Container(
@@ -22,10 +24,10 @@ class TripHudSheet extends ConsumerWidget {
           color: SafeRouteColors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            'No children registered to this parent account.',
-            style: TextStyle(color: SafeRouteColors.onSurfaceVariant),
+            loc.noChildrenTitle,
+            style: const TextStyle(color: SafeRouteColors.onSurfaceVariant),
           ),
         ),
       );
@@ -72,7 +74,7 @@ class TripHudSheet extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Proximity / Trip Status Badge
-                  _buildStatusBadge(telemetry),
+                  _buildStatusBadge(telemetry, loc),
 
                   // Configure Pickup Location Button
                   TextButton.icon(
@@ -81,7 +83,7 @@ class TripHudSheet extends ConsumerWidget {
                     },
                     icon: const Icon(Icons.edit_location_alt, size: 16),
                     label: Text(
-                      child.hasPickupLocation ? 'Edit Stop' : 'Set Stop',
+                      child.hasPickupLocation ? loc.editStop : loc.setStop,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     style: TextButton.styleFrom(
@@ -253,8 +255,8 @@ class TripHudSheet extends ConsumerWidget {
                     color: SafeRouteColors.blue, size: 18),
                 label: Text(
                   child.hasPickupLocation
-                      ? 'Edit Stop: ${child.pickupName ?? "Designated Stop"}'
-                      : '📍 Set Pickup Location for ${child.name}',
+                      ? '${loc.editStop}: ${child.pickupName ?? "Designated Stop"}'
+                      : '📍 ${loc.setStop} (${child.name})',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 onPressed: () {
@@ -273,18 +275,17 @@ class TripHudSheet extends ConsumerWidget {
                       color: SafeRouteColors.warning.withValues(alpha: 0.3),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.info_outline,
+                      const Icon(Icons.info_outline,
                           color: SafeRouteColors.warning, size: 18),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Tap above to set your pickup stop and receive live proximity alerts.',
+                          'Set your child\'s pickup location to receive accurate distance & arrival notifications.',
                           style: TextStyle(
-                            color: SafeRouteColors.warning,
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.orange.shade900,
                           ),
                         ),
                       ),
@@ -299,7 +300,7 @@ class TripHudSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusBadge(BusTelemetryState telemetry) {
+  Widget _buildStatusBadge(BusTelemetryState telemetry, AppLocalizations loc) {
     if (!telemetry.hasOngoingTrip) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -307,17 +308,17 @@ class TripHudSheet extends ConsumerWidget {
           color: SafeRouteColors.surfaceVariant,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 4,
               backgroundColor: SafeRouteColors.disabled,
             ),
-            SizedBox(width: 6),
+            const SizedBox(width: 6),
             Text(
-              'Trip Not Started',
-              style: TextStyle(
+              loc.busInDepot,
+              style: const TextStyle(
                 color: SafeRouteColors.onSurfaceVariant,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -333,20 +334,20 @@ class TripHudSheet extends ConsumerWidget {
 
     switch (telemetry.proximityState) {
       case ProximityState.locked:
-        label = 'Arrived at Stop';
+        label = loc.busArrived;
         color = SafeRouteColors.safetyGreen;
         break;
       case ProximityState.enteredRadius:
       case ProximityState.notified:
-        label = 'Nearby (< Stop Radius)';
+        label = loc.busApproaching;
         color = SafeRouteColors.safetyGreen;
         break;
       case ProximityState.approaching:
-        label = 'Approaching Stop';
+        label = loc.busApproaching;
         color = SafeRouteColors.orange;
         break;
       case ProximityState.outside:
-        label = 'Bus En Route';
+        label = loc.busOnTheWay;
         color = SafeRouteColors.blue;
         break;
     }
