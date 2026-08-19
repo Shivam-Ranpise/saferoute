@@ -31,10 +31,11 @@ dependencies:
   geolocator: ^13.0.2
   permission_handler: ^11.3.1
 
-  # Notifications
+  # Notifications & Voice
   firebase_core: ^3.13.1
   firebase_messaging: ^15.2.5
   flutter_local_notifications: ^18.0.1
+  flutter_tts: ^4.2.2
 
   # Storage
   flutter_secure_storage: ^9.2.4

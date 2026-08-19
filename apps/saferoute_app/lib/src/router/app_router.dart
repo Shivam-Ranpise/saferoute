@@ -9,6 +9,7 @@ import '../features/splash/splash_screen.dart';
 import '../features/parent/presentation/parent_home_screen.dart';
 import '../features/parent/presentation/set_pickup_location_screen.dart';
 import '../features/parent/presentation/parent_settings_screen.dart';
+import '../features/parent/presentation/voice_settings_screen.dart';
 import '../features/notifications/presentation/notification_inbox_screen.dart';
 import '../features/driver/presentation/driver_dashboard_screen.dart';
 
@@ -138,6 +139,10 @@ final List<RouteBase> _routes = [
         path: 'notifications',
         builder: (context, state) => const NotificationInboxScreen(),
       ),
+      GoRoute(
+        path: 'voice-settings',
+        builder: (context, state) => const VoiceSettingsScreen(),
+      ),
     ],
   ),
   GoRoute(
@@ -154,6 +159,10 @@ final List<RouteBase> _routes = [
   GoRoute(
     path: '/parent/notifications',
     builder: (context, state) => const NotificationInboxScreen(),
+  ),
+  GoRoute(
+    path: '/parent/voice-settings',
+    builder: (context, state) => const VoiceSettingsScreen(),
   ),
 
   // ─── DRIVER ROUTES ──────────────────────────────────────────────

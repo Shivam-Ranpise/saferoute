@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../theme/app_theme.dart';
@@ -220,6 +221,29 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                   },
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Spoken Voice Announcements Card Link
+          Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: SafeRouteColors.deepNavy.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.record_voice_over_rounded, color: SafeRouteColors.deepNavy),
+              ),
+              title: const Text(
+                'Voice & Speech Alerts (TTS)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text('Custom spoken announcements when bus arrives'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/parent/voice-settings'),
             ),
           ),
           const SizedBox(height: 24),

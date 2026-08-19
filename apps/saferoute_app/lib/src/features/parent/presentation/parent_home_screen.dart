@@ -5,7 +5,9 @@ import 'package:saferoute_core/saferoute_core.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../notifications/providers/notification_providers.dart';
+import '../../notifications/providers/voice_settings_provider.dart';
 import '../../notifications/services/app_notification_service.dart';
+import '../../notifications/services/app_voice_service.dart';
 import '../providers/parent_providers.dart';
 import 'widgets/bus_map_view.dart';
 import 'widgets/child_selector_bar.dart';
@@ -184,6 +186,16 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
             _screenLaunchTime.subtract(const Duration(seconds: 15)),
           );
           if (!prevIds.contains(item.id) && item.isUnread && isFresh) {
+            // Speak voice announcement if enabled
+            final voiceSettings = ref.read(voiceSettingsProvider);
+            if (voiceSettings.enabled) {
+              final spoken = AppVoiceService.instance.generateSpokenSentence(
+                title: item.title,
+                message: item.message,
+              );
+              AppVoiceService.instance.speak(spoken);
+            }
+
             AppNotificationHelper.showInAppCenterPopup(
               context,
               title: item.title,
@@ -239,6 +251,11 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.record_voice_over_rounded, color: Colors.white),
+            tooltip: 'Voice Alerts (TTS)',
+            onPressed: () => context.push('/parent/voice-settings'),
+          ),
           IconButton(
             icon: Stack(
               children: [
