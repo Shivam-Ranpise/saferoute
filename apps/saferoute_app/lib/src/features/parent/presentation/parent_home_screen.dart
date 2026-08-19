@@ -180,6 +180,20 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
               context,
               title: item.title,
               message: item.message,
+              onDismiss: () {
+                ref.read(readNotificationIdsProvider.notifier).update(
+                      (state) => {...state, item.id},
+                    );
+                ref.read(notificationRepositoryProvider).markAsRead(item.id);
+              },
+              onDelete: () {
+                ref.read(clearedNotificationIdsProvider.notifier).update(
+                      (state) => {...state, item.id},
+                    );
+                ref.read(readNotificationIdsProvider.notifier).update(
+                      (state) => {...state, item.id},
+                    );
+              },
             );
           }
         }

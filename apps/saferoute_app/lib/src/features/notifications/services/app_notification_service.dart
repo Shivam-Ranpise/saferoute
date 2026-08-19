@@ -216,6 +216,8 @@ class AppNotificationHelper {
     BuildContext context, {
     required String title,
     required String message,
+    VoidCallback? onDismiss,
+    VoidCallback? onDelete,
   }) async {
     if (!context.mounted) return;
 
@@ -266,23 +268,40 @@ class AppNotificationHelper {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              Row(
+                children: [
+                  if (onDelete != null) ...[
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                      tooltip: 'Delete Notification',
+                      onPressed: () {
+                        Navigator.pop(dialogCtx);
+                        onDelete();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(dialogCtx);
+                        onDismiss?.call();
+                      },
+                      child: const Text(
+                        'OK / Dismiss',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
                     ),
                   ),
-                  onPressed: () => Navigator.pop(dialogCtx),
-                  child: const Text(
-                    'OK / Dismiss',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ),
+                ],
               ),
             ],
           ),
