@@ -22,6 +22,8 @@ class ParentHomeScreen extends ConsumerStatefulWidget {
 
 class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
   bool _promptedForStop = false;
+  final Set<String> _seenNotificationIds = {};
+  bool _initialNotificationsLoaded = false;
 
   @override
   void initState() {
@@ -169,23 +171,20 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     }
   }
 
-  final DateTime _screenLaunchTime = DateTime.now();
-
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<List<NotificationItem>>>(parentNotificationsProvider, (previous, next) {
       next.whenData((items) {
-        // Skip initial load to prevent historical notifications from popping up
-        if (previous == null || !previous.hasValue) return;
-
-        final prevItems = previous.value ?? [];
-        final prevIds = prevItems.map((i) => i.id).toSet();
+        if (!_initialNotificationsLoaded) {
+          _initialNotificationsLoaded = true;
+          _seenNotificationIds.addAll(items.map((i) => i.id));
+          return;
+        }
 
         for (final item in items) {
-          final isFresh = item.createdAt.isAfter(
-            _screenLaunchTime.subtract(const Duration(seconds: 15)),
-          );
-          if (!prevIds.contains(item.id) && item.isUnread && isFresh) {
+          if (!_seenNotificationIds.contains(item.id) && item.isUnread) {
+            _seenNotificationIds.add(item.id);
+
             // Speak voice announcement if enabled
             final voiceSettings = ref.read(voiceSettingsProvider);
             if (voiceSettings.enabled) {

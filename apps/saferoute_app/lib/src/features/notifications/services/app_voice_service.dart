@@ -79,38 +79,60 @@ class AppVoiceService {
     required String message,
     NotificationEventType? eventType,
   }) {
-    final lowerTitle = title.toLowerCase();
-    final lowerMsg = message.toLowerCase();
+    final cleanTitle = title.trim();
+    final cleanMsg = message.trim();
+    final lowerTitle = cleanTitle.toLowerCase();
+    final lowerMsg = cleanMsg.toLowerCase();
 
-    // Bus Approaching / Arrived
+    // 1. Emergency SOS / Critical Delays: Read full detailed message content so parents know the exact situation!
+    if (lowerTitle.contains('emergency') ||
+        lowerTitle.contains('sos') ||
+        lowerTitle.contains('critical') ||
+        lowerTitle.contains('accident') ||
+        lowerTitle.contains('breakdown') ||
+        lowerTitle.contains('delay') ||
+        lowerMsg.contains('sos') ||
+        lowerMsg.contains('emergency') ||
+        lowerMsg.contains('delay')) {
+      if (cleanTitle.isNotEmpty && cleanMsg.isNotEmpty && !cleanMsg.toLowerCase().contains(cleanTitle.toLowerCase())) {
+        return 'Urgent Alert: $cleanTitle. $cleanMsg';
+      } else {
+        return 'Urgent Alert: ${cleanMsg.isNotEmpty ? cleanMsg : cleanTitle}';
+      }
+    }
+
+    // 2. Bus Approaching / Nearby
     if (lowerTitle.contains('approach') || lowerTitle.contains('nearby') || lowerMsg.contains('approaching')) {
       return 'Attention: Your child\'s school bus is approaching your stop. Please be ready!';
     }
+
+    // 3. Bus Arrived at Stop
     if (lowerTitle.contains('arrived') || lowerMsg.contains('has arrived')) {
       return 'Attention: Your child\'s school bus has arrived at your designated stop!';
     }
 
-    // School Reached / Trip Completed
+    // 4. School Reached / Trip Completed
     if (lowerTitle.contains('reached school') || lowerTitle.contains('school arrival') || lowerMsg.contains('reached school')) {
       return 'Good news! Your child has safely reached the school.';
     }
 
-    // Student Boarded
+    // 5. Student Boarded
     if (lowerTitle.contains('boarded') || lowerMsg.contains('boarded')) {
       return 'Your child has safely boarded the school bus.';
     }
 
-    // Student Dropped
+    // 6. Student Dropped
     if (lowerTitle.contains('dropped') || lowerMsg.contains('dropped off')) {
       return 'Your child has been safely dropped off.';
     }
 
-    // Emergency SOS
-    if (lowerTitle.contains('emergency') || lowerTitle.contains('sos') || lowerTitle.contains('delay')) {
-      return 'Urgent Alert: $title. $message';
+    // 7. Custom School Announcement / Notice from Admin: Read exact notice title & content
+    if (cleanTitle.isNotEmpty && cleanMsg.isNotEmpty && !cleanMsg.toLowerCase().contains(cleanTitle.toLowerCase())) {
+      return 'School Announcement: $cleanTitle. $cleanMsg';
+    } else if (cleanMsg.isNotEmpty) {
+      return 'School Announcement: $cleanMsg';
+    } else {
+      return 'School Announcement: $cleanTitle';
     }
-
-    // Fallback: Speak Title and Message cleanly
-    return '$title. $message';
   }
 }

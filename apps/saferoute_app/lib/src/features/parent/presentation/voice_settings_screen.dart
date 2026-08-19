@@ -253,13 +253,22 @@ class VoiceSettingsScreen extends ConsumerWidget {
               spokenText: 'Your child has been safely dropped off at home.',
             ),
 
-            // Template 5: Emergency Alert
+            // Template 5: Emergency SOS (Reads full detail)
             _buildTemplateCard(
               icon: Icons.warning_rounded,
               color: SafeRouteColors.error,
-              title: 'Urgent SOS / Route Delay Notice',
+              title: 'Urgent SOS / Route Alert (Reads Full Content)',
               spokenText:
-                  'Urgent Alert: School bus route is experiencing a 15 minute delay due to traffic.',
+                  'Urgent Alert: Bus breakdown near Sector 4. Backup bus dispatched, expected 15 mins delay.',
+            ),
+
+            // Template 6: Custom Announcement (Reads title & message)
+            _buildTemplateCard(
+              icon: Icons.campaign_rounded,
+              color: const Color(0xFFF97316),
+              title: 'Custom School Announcement (Reads Full Content)',
+              spokenText:
+                  'School Announcement: Tomorrow will be a half-day due to heavy rain forecast. Buses depart at 12:30 PM.',
             ),
           ],
         ],
