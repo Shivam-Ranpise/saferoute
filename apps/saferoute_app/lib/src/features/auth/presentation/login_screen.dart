@@ -49,87 +49,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final loc = ref.watch(appLocalizationsProvider);
     final currentLocale = ref.watch(appLocaleProvider);
 
-    ref.listen(authProvider, (previous, next) {
-      if (next.error != null && next.error!.isNotEmpty) {
-        final errorMessage = next.error!;
-        ref.read(authProvider.notifier).clearError();
-
-        showDialog(
-          context: context,
-          builder: (dialogCtx) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 8,
-            backgroundColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: SafeRouteColors.error.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.lock_reset_rounded,
-                      color: SafeRouteColors.error,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Invalid Credentials',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: SafeRouteColors.deepNavy,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    errorMessage.contains('Invalid') || errorMessage.contains('credentials')
-                        ? 'The username, mobile number or password you entered is incorrect. Please check your credentials and try again.'
-                        : errorMessage,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: SafeRouteColors.deepNavy,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () => Navigator.pop(dialogCtx),
-                      child: const Text(
-                        'Try Again',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
-    });
-
     return Scaffold(
       body: SafeArea(
         child: FadeTransition(
@@ -376,5 +295,90 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           identifier: _identifierController.text.trim(),
           password: _passwordController.text,
         );
+
+    if (!mounted) return;
+
+    final authState = ref.read(authProvider);
+    if (authState.error != null && authState.error!.isNotEmpty) {
+      final error = authState.error!;
+      ref.read(authProvider.notifier).clearError();
+      _showInvalidCredentialsDialog(error);
+    }
+  }
+
+  void _showInvalidCredentialsDialog(String errorMessage) {
+    final loc = ref.read(appLocalizationsProvider);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 8,
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: SafeRouteColors.error.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.lock_reset_rounded,
+                  color: SafeRouteColors.error,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                loc.invalidCredentialsTitle,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: SafeRouteColors.deepNavy,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                loc.invalidCredentialsMsg,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade700,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: SafeRouteColors.deepNavy,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: Text(
+                    loc.tryAgain,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

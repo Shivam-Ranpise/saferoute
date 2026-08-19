@@ -394,15 +394,15 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                           child: const Icon(Icons.logout_rounded, color: SafeRouteColors.error, size: 32),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Sign Out',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: SafeRouteColors.deepNavy),
+                        Text(
+                          loc.signOutDialogTitle,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: SafeRouteColors.deepNavy),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Are you sure you want to sign out of your account?',
+                        Text(
+                          loc.signOutDialogMsg,
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 13, color: SafeRouteColors.onSurfaceVariant),
+                          style: const TextStyle(fontSize: 13, color: SafeRouteColors.onSurfaceVariant),
                         ),
                         const SizedBox(height: 24),
                         Row(
@@ -410,7 +410,7 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                             Expanded(
                               child: OutlinedButton(
                                 onPressed: () => Navigator.pop(dialogCtx),
-                                child: const Text('Cancel'),
+                                child: Text(loc.cancelButton),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -424,7 +424,7 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                                   Navigator.pop(dialogCtx);
                                   ref.read(authProvider.notifier).signOut();
                                 },
-                                child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.bold)),
+                                child: Text(loc.logoutButton, style: const TextStyle(fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ],

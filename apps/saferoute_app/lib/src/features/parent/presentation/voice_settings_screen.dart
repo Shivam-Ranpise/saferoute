@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../notifications/providers/voice_settings_provider.dart';
 import '../../notifications/services/app_voice_service.dart';
@@ -11,11 +12,12 @@ class VoiceSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(voiceSettingsProvider);
     final notifier = ref.read(voiceSettingsProvider.notifier);
+    final loc = ref.watch(appLocalizationsProvider);
 
     return Scaffold(
       backgroundColor: SafeRouteColors.background,
       appBar: AppBar(
-        title: const Text('Voice & Speech Alerts'),
+        title: Text(loc.voiceSettingsTitle),
         backgroundColor: Colors.white,
         foregroundColor: SafeRouteColors.deepNavy,
         elevation: 0.5,
@@ -61,9 +63,9 @@ class VoiceSettingsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Spoken Voice Alerts',
-                        style: TextStyle(
+                      Text(
+                        loc.spokenVoiceAlerts,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: SafeRouteColors.deepNavy,
@@ -72,8 +74,8 @@ class VoiceSettingsScreen extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         settings.enabled
-                            ? 'Speaks bus arrival & school updates out loud'
-                            : 'Voice announcements are disabled',
+                            ? loc.voiceEnabledDesc
+                            : loc.voiceDisabledDesc,
                         style: const TextStyle(
                           fontSize: 12,
                           color: SafeRouteColors.onSurfaceVariant,
@@ -105,9 +107,9 @@ class VoiceSettingsScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Voice Controls & Speech Rate',
-                    style: TextStyle(
+                  Text(
+                    loc.voiceControlsTitle,
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: SafeRouteColors.deepNavy,
@@ -119,16 +121,16 @@ class VoiceSettingsScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Speech Speed:',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      Text(
+                        loc.speechSpeed,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                       Text(
                         settings.speechRate < 0.4
-                            ? 'Slow'
+                            ? loc.slow
                             : settings.speechRate > 0.6
-                                ? 'Fast'
-                                : 'Normal (${(settings.speechRate * 2).toStringAsFixed(1)}x)',
+                                ? loc.fast
+                                : '${loc.normal} (${(settings.speechRate * 2).toStringAsFixed(1)}x)',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -152,9 +154,9 @@ class VoiceSettingsScreen extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Voice Volume:',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      Text(
+                        loc.voiceVolume,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                       ),
                       Text(
                         '${(settings.volume * 100).toInt()}%',
@@ -190,9 +192,9 @@ class VoiceSettingsScreen extends ConsumerWidget {
                         ),
                       ),
                       icon: const Icon(Icons.volume_up_rounded, size: 18),
-                      label: const Text(
-                        'Test Play Voice Sample',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      label: Text(
+                        loc.testPlayVoice,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       onPressed: () {
                         AppVoiceService.instance.speak(
@@ -207,11 +209,11 @@ class VoiceSettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 20),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                'Spoken Announcement Templates',
-                style: TextStyle(
+                loc.announcementTemplates,
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: SafeRouteColors.deepNavy,

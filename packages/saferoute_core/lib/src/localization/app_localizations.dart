@@ -74,6 +74,23 @@ class AppLocalizations {
       'language_subtitle': 'Choose your preferred language for the application',
       'save_button': 'Save Preferences',
       'logout_button': 'Sign Out',
+      'sign_out_dialog_title': 'Sign Out',
+      'sign_out_dialog_msg': 'Are you sure you want to sign out of SafeRoute?',
+      'cancel_button': 'Cancel',
+      'try_again': 'Try Again',
+      'invalid_credentials_title': 'Invalid Credentials',
+      'invalid_credentials_msg': 'The username, mobile number or password you entered is incorrect. Please check your credentials and try again.',
+      'voice_controls_title': 'Voice Controls & Speech Rate',
+      'speech_speed': 'Speech Speed:',
+      'voice_volume': 'Voice Volume:',
+      'test_play_voice': 'Test Play Voice Sample',
+      'announcement_templates': 'Spoken Announcement Templates',
+      'spoken_voice_alerts': 'Spoken Voice Alerts',
+      'voice_enabled_desc': 'Speaks bus arrival & school updates out loud',
+      'voice_disabled_desc': 'Voice announcements are disabled',
+      'slow': 'Slow',
+      'normal': 'Normal',
+      'fast': 'Fast',
       'admin_fleet_overview': 'Fleet Command Center',
       'admin_buses': 'Fleet Buses',
       'admin_drivers': 'Drivers Registry',
@@ -147,6 +164,23 @@ class AppLocalizations {
       'language_subtitle': 'एप्लिकेशन के लिए अपनी पसंदीदा भाषा चुनें',
       'save_button': 'सेटिंग्स सुरक्षित करें',
       'logout_button': 'लॉग आउट',
+      'sign_out_dialog_title': 'लॉग आउट करें',
+      'sign_out_dialog_msg': 'क्या आप वाकई सेफरूट से लॉग आउट करना चाहते हैं?',
+      'cancel_button': 'रद्द करें',
+      'try_again': 'पुनः प्रयास करें',
+      'invalid_credentials_title': 'अमान्य विवरण',
+      'invalid_credentials_msg': 'दर्ज किया गया उपयोगकर्ता नाम, मोबाइल नंबर या पासवर्ड गलत है। कृपया जांचें और पुनः प्रयास करें।',
+      'voice_controls_title': 'आवाज नियंत्रण और बोलने की गति',
+      'speech_speed': 'बोलने की गति:',
+      'voice_volume': 'आवाज की तीव्रता:',
+      'test_play_voice': 'परीक्षण आवाज बजाएं',
+      'announcement_templates': 'घोषणा टेम्पलेट',
+      'spoken_voice_alerts': 'बोलकर सुनाई जाने वाली आवाज सूचनाएं',
+      'voice_enabled_desc': 'बस आने और स्कूल अपडेट को बोलकर सुनाता है',
+      'voice_disabled_desc': 'आवाज घोषणाएं अक्षम हैं',
+      'slow': 'धीमा',
+      'normal': 'सामान्य',
+      'fast': 'तेज',
       'admin_fleet_overview': 'फ्लीट कमांड सेंटर',
       'admin_buses': 'स्कूल बसें',
       'admin_drivers': 'ड्राइवर सूची',
@@ -220,6 +254,23 @@ class AppLocalizations {
       'language_subtitle': 'अनुप्रयोगासाठी आपली पसंतीची भाषा निवडा',
       'save_button': 'पसंती जतन करा',
       'logout_button': 'लॉग आऊट',
+      'sign_out_dialog_title': 'लॉग आऊट करा',
+      'sign_out_dialog_msg': 'तुम्हाला खात्री आहे की तुम्ही सेफरूटमधून लॉग आऊट करू इच्छिता?',
+      'cancel_button': 'रद्द करा',
+      'try_again': 'पुन्हा प्रयत्न करा',
+      'invalid_credentials_title': 'अवैध तपशील',
+      'invalid_credentials_msg': 'प्रविष्ट केलेले वापरकर्ता नाव, मोबाईल क्रमांक किंवा पासवर्ड चुकीचा आहे. कृपया तपासा आणि पुन्हा प्रयत्न करा.',
+      'voice_controls_title': 'आवाज नियंत्रण आणि बोलण्याचा वेग',
+      'speech_speed': 'बोलण्याचा वेग:',
+      'voice_volume': 'आवाजाची पातळी:',
+      'test_play_voice': 'चाचणी आवाज प्ले करा',
+      'announcement_templates': 'घोषणा टेम्पलेट्स',
+      'spoken_voice_alerts': 'ऐकू येणाऱ्या आवाज सूचना',
+      'voice_enabled_desc': 'बस आल्यावर आणि शाळेचे अपडेट बोलून सांगते',
+      'voice_disabled_desc': 'आवाज घोषणा अक्षम आहेत',
+      'slow': 'हळू',
+      'normal': 'सामान्य',
+      'fast': 'जलद',
       'admin_fleet_overview': 'फ्लीट नियंत्रण केंद्र',
       'admin_buses': 'शाळा बसेस',
       'admin_drivers': 'चालक यादी',
@@ -307,4 +358,21 @@ class AppLocalizations {
   String get languageSubtitle => translate('language_subtitle');
   String get saveButton => translate('save_button');
   String get logoutButton => translate('logout_button');
+  String get signOutDialogTitle => translate('sign_out_dialog_title');
+  String get signOutDialogMsg => translate('sign_out_dialog_msg');
+  String get cancelButton => translate('cancel_button');
+  String get tryAgain => translate('try_again');
+  String get invalidCredentialsTitle => translate('invalid_credentials_title');
+  String get invalidCredentialsMsg => translate('invalid_credentials_msg');
+  String get voiceControlsTitle => translate('voice_controls_title');
+  String get speechSpeed => translate('speech_speed');
+  String get voiceVolume => translate('voice_volume');
+  String get testPlayVoice => translate('test_play_voice');
+  String get announcementTemplates => translate('announcement_templates');
+  String get spokenVoiceAlerts => translate('spoken_voice_alerts');
+  String get voiceEnabledDesc => translate('voice_enabled_desc');
+  String get voiceDisabledDesc => translate('voice_disabled_desc');
+  String get slow => translate('slow');
+  String get normal => translate('normal');
+  String get fast => translate('fast');
 }
