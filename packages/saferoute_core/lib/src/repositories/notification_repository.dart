@@ -26,9 +26,7 @@ class NotificationItem {
       event?.priority ?? NotificationPriority.normal;
   DeliveryStatus get status => delivery.status;
   DateTime get createdAt => delivery.createdAt;
-  bool get isUnread =>
-      delivery.status == DeliveryStatus.pending ||
-      delivery.status == DeliveryStatus.sent;
+  bool get isUnread => delivery.status != DeliveryStatus.read;
 }
 
 class NotificationRepository {

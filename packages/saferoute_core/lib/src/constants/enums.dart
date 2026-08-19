@@ -192,14 +192,21 @@ enum DeliveryStatus {
   processing,
   sent,
   delivered,
+  read,
   failed,
   cancelled;
 
   static DeliveryStatus fromString(String value) {
-    return DeliveryStatus.values.firstWhere(
-      (e) => e.name.toUpperCase() == value.toUpperCase(),
-      orElse: () => DeliveryStatus.pending,
-    );
+    switch (value.toUpperCase()) {
+      case 'PENDING': return DeliveryStatus.pending;
+      case 'PROCESSING': return DeliveryStatus.processing;
+      case 'SENT': return DeliveryStatus.sent;
+      case 'DELIVERED': return DeliveryStatus.delivered;
+      case 'READ': return DeliveryStatus.read;
+      case 'FAILED': return DeliveryStatus.failed;
+      case 'CANCELLED': return DeliveryStatus.cancelled;
+      default: return DeliveryStatus.pending;
+    }
   }
 
   String toDbValue() => name.toUpperCase();

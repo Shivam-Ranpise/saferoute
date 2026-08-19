@@ -182,10 +182,18 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
         }
 
         for (final item in items) {
-          if (!_seenNotificationIds.contains(item.id) && item.isUnread) {
+          if (!_seenNotificationIds.contains(item.id)) {
             _seenNotificationIds.add(item.id);
 
-            // Speak voice announcement if enabled
+            // 1. Play System Notification Sound & Tray Banner
+            AppNotificationHelper.showSystemNotification(
+              deliveryId: item.id,
+              title: item.title,
+              message: item.message,
+              createdAt: item.createdAt,
+            );
+
+            // 2. Speak voice announcement if enabled
             final voiceSettings = ref.read(voiceSettingsProvider);
             if (voiceSettings.enabled) {
               final spoken = AppVoiceService.instance.generateSpokenSentence(
@@ -195,6 +203,7 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
               AppVoiceService.instance.speak(spoken);
             }
 
+            // 3. Show In-App Center Popup Modal
             AppNotificationHelper.showInAppCenterPopup(
               context,
               title: item.title,

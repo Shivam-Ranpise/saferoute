@@ -60,8 +60,13 @@ class AppVoiceService {
   Future<void> speak(String text) async {
     if (text.trim().isEmpty) return;
     try {
+      if (!_isInitialized) {
+        await initialize();
+      }
+      AppLogger.info('Speaking TTS: "$text"', context: 'VoiceTTS');
       await _tts.stop();
-      await _tts.speak(text.trim());
+      final result = await _tts.speak(text.trim());
+      AppLogger.info('TTS speak result: $result', context: 'VoiceTTS');
     } catch (e) {
       AppLogger.error('TTS speech error', error: e, context: 'VoiceTTS');
     }
