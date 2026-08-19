@@ -117,41 +117,17 @@ class DriverRepository {
           context: 'DriverRepository');
       final trip = Trip.fromJson(response);
 
-      // Dynamically determine morning vs evening based on organization school schedule or hour
+      // Dynamically determine morning vs evening based on hour
       try {
-        final orgRes = await SupabaseService.client
-            .from(AppConstants.tableOrganizations)
-            .select('school_schedule')
-            .eq('id', organizationId)
-            .maybeSingle();
+        final int currentHour = now.hour;
+        final bool isMorning = currentHour < 12;
 
-        String title = 'School Bus Started';
-        String message = 'The school bus has started its route and will arrive soon. Please be ready at your pickup stop.';
-
-        int currentHour = now.hour;
-        int morningCutoff = 12;
-
-        if (orgRes != null && orgRes['school_schedule'] != null) {
-          final schedule = orgRes['school_schedule'] as Map<String, dynamic>;
-          final startTimeStr = schedule['start_time'] as String? ?? '10:00';
-          final parts = startTimeStr.split(':');
-          if (parts.isNotEmpty) {
-            final startH = int.tryParse(parts[0]);
-            if (startH != null) {
-              morningCutoff = (startH + 2).clamp(10, 14);
-            }
-          }
-        }
-
-        if (currentHour >= morningCutoff) {
-          // Evening / Afternoon return trip
-          title = 'Evening Bus Route Started';
-          message = 'The school bus has started its return route from school. Please be ready at your drop-off stop.';
-        } else {
-          // Morning pickup trip
-          title = 'Morning Bus Route Started';
-          message = 'The school bus has started its route and will arrive soon. Please be ready at your pickup stop.';
-        }
+        final String title = isMorning
+            ? 'Morning Bus Route Started'
+            : 'Evening Bus Route Started';
+        final String message = isMorning
+            ? 'The school bus will arrive soon. Please be ready at your pickup stop.'
+            : 'The school bus has left the school. Please be ready at your drop-off stop.';
 
         final driverProfileId = SupabaseService.client.auth.currentUser?.id;
         final eventRes = await SupabaseService.client
@@ -214,39 +190,15 @@ class DriverRepository {
       // If completing trip, log contextual arrival notification based on school schedule
       if (status == TripStatus.completed) {
         try {
-          final orgRes = await SupabaseService.client
-              .from(AppConstants.tableOrganizations)
-              .select('school_schedule')
-              .eq('id', trip.organizationId)
-              .maybeSingle();
+          final int currentHour = now.hour;
+          final bool isMorning = currentHour < 12;
 
-          String title = 'Bus Arrived at School';
-          String message = 'The school bus has safely arrived at the school campus.';
-
-          int currentHour = now.hour;
-          int morningCutoff = 13;
-
-          if (orgRes != null && orgRes['school_schedule'] != null) {
-            final schedule = orgRes['school_schedule'] as Map<String, dynamic>;
-            final startTimeStr = schedule['start_time'] as String? ?? '10:00';
-            final parts = startTimeStr.split(':');
-            if (parts.isNotEmpty) {
-              final startH = int.tryParse(parts[0]);
-              if (startH != null) {
-                morningCutoff = (startH + 3).clamp(11, 15);
-              }
-            }
-          }
-
-          if (currentHour >= morningCutoff) {
-            // Afternoon / Evening route completion
-            title = 'Bus Trip Completed';
-            message = 'The school bus has safely completed its evening drop-off route.';
-          } else {
-            // Morning route completion
-            title = 'Bus Arrived at School';
-            message = 'The school bus has safely arrived at the school campus.';
-          }
+          final String title = isMorning
+              ? 'Bus Arrived at School'
+              : 'Evening Route Completed';
+          final String message = isMorning
+              ? 'The school bus has safely arrived at the school campus.'
+              : 'The school bus has safely completed its evening drop-off route.';
 
           final driverProfileId = SupabaseService.client.auth.currentUser?.id;
           final eventRes = await SupabaseService.client
