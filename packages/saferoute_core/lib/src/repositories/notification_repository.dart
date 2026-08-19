@@ -28,8 +28,7 @@ class NotificationItem {
   DateTime get createdAt => delivery.createdAt;
   bool get isUnread =>
       delivery.status == DeliveryStatus.pending ||
-      delivery.status == DeliveryStatus.sent ||
-      delivery.status == DeliveryStatus.delivered;
+      delivery.status == DeliveryStatus.sent;
 }
 
 class NotificationRepository {
@@ -204,13 +203,13 @@ class NotificationRepository {
     return controller.stream;
   }
 
-  /// Marks a specific delivery as read/delivered
+  /// Marks a specific delivery as read
   Future<void> markAsRead(String deliveryId) async {
     try {
       await _db
           .from('notification_deliveries')
           .update({
-            'status': DeliveryStatus.delivered.toDbValue(),
+            'status': 'READ',
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', deliveryId);
@@ -226,7 +225,7 @@ class NotificationRepository {
       await _db
           .from('notification_deliveries')
           .update({
-            'status': DeliveryStatus.delivered.toDbValue(),
+            'status': 'READ',
             'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('recipient_profile_id', profileId);

@@ -167,15 +167,23 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
     }
   }
 
+  final DateTime _screenLaunchTime = DateTime.now();
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<List<NotificationItem>>>(parentNotificationsProvider, (previous, next) {
       next.whenData((items) {
-        final prevItems = previous?.value ?? [];
+        // Skip initial load to prevent historical notifications from popping up
+        if (previous == null || !previous.hasValue) return;
+
+        final prevItems = previous.value ?? [];
         final prevIds = prevItems.map((i) => i.id).toSet();
 
         for (final item in items) {
-          if (!prevIds.contains(item.id) && item.isUnread) {
+          final isFresh = item.createdAt.isAfter(
+            _screenLaunchTime.subtract(const Duration(seconds: 15)),
+          );
+          if (!prevIds.contains(item.id) && item.isUnread && isFresh) {
             AppNotificationHelper.showInAppCenterPopup(
               context,
               title: item.title,

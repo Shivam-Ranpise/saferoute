@@ -25,7 +25,7 @@ class _NotificationAuditScreenState
   String _customPriority = 'NORMAL';
   String? _selectedParentId; // null means all parents
   bool _sendCustomPush = true;
-  bool _sendCustomWhatsapp = true;
+  bool _sendCustomWhatsapp = false;
   bool _sendCustomSms = false;
   bool _isSendingCustom = false;
 
@@ -328,6 +328,20 @@ class _NotificationAuditScreenState
                   children: [
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: AdminColors.deepNavy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('Compose Custom Notice'),
+                      onPressed: () => _showComposeNotificationDialog(context),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: AdminColors.error,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -465,6 +479,261 @@ class _NotificationAuditScreenState
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showComposeNotificationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: 700,
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: StatefulBuilder(
+              builder: (context, setDialogState) => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.campaign_rounded, color: AdminColors.deepNavy, size: 24),
+                          SizedBox(width: 10),
+                          Text(
+                            'Compose Custom Notice / Broadcast',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AdminColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(dialogCtx),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24),
+
+                  // Audience Picker
+                  const Text(
+                    'Recipient Audience:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 6),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final parentsAsync = ref.watch(adminParentsProvider);
+                      return parentsAsync.when(
+                        data: (parents) {
+                          return DropdownButtonFormField<String?>(
+                            value: _selectedParentId,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.group_rounded, color: AdminColors.deepNavy),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Text('📣 All Parents in School (Broadcast to Everyone)',
+                                    style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              ...parents.map(
+                                (p) {
+                                  final prof = p['profiles'] as Map<String, dynamic>? ?? {};
+                                  final parentId = p['id'] as String;
+                                  final name = prof['full_name'] as String? ?? 'Parent';
+                                  final phone = prof['phone'] as String? ?? '';
+                                  return DropdownMenuItem<String?>(
+                                    value: parentId,
+                                    child: Text('$name ${phone.isNotEmpty ? "($phone)" : ""}'),
+                                  );
+                                },
+                              ),
+                            ],
+                            onChanged: (val) {
+                              setDialogState(() => _selectedParentId = val);
+                              setState(() => _selectedParentId = val);
+                            },
+                          );
+                        },
+                        loading: () => const LinearProgressIndicator(),
+                        error: (_, __) => const Text('Failed to load parents'),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Priority & Channels Row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Priority Level:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              value: _customPriority,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                              items: const [
+                                DropdownMenuItem(value: 'NORMAL', child: Text('Standard (Routine)')),
+                                DropdownMenuItem(value: 'HIGH', child: Text('High Priority Alert')),
+                                DropdownMenuItem(value: 'EMERGENCY', child: Text('🚨 Emergency SOS')),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setDialogState(() => _customPriority = val);
+                                  setState(() => _customPriority = val);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Dispatch Channels:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              children: [
+                                FilterChip(
+                                  avatar: Icon(Icons.notifications_active_rounded,
+                                      size: 16, color: _sendCustomPush ? Colors.white : AdminColors.deepNavy),
+                                  label: const Text('Mobile Push (FCM)'),
+                                  selected: _sendCustomPush,
+                                  selectedColor: AdminColors.deepNavy,
+                                  labelStyle: TextStyle(
+                                      color: _sendCustomPush ? Colors.white : AdminColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12),
+                                  onSelected: (val) {
+                                    setDialogState(() => _sendCustomPush = val);
+                                    setState(() => _sendCustomPush = val);
+                                  },
+                                ),
+                                FilterChip(
+                                  avatar: Icon(Icons.chat_bubble_outline_rounded,
+                                      size: 16, color: _sendCustomWhatsapp ? Colors.white : AdminColors.safetyGreen),
+                                  label: const Text('WhatsApp Gateway'),
+                                  selected: _sendCustomWhatsapp,
+                                  selectedColor: AdminColors.safetyGreen,
+                                  labelStyle: TextStyle(
+                                      color: _sendCustomWhatsapp ? Colors.white : AdminColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12),
+                                  onSelected: (val) {
+                                    setDialogState(() => _sendCustomWhatsapp = val);
+                                    setState(() => _sendCustomWhatsapp = val);
+                                  },
+                                ),
+                                FilterChip(
+                                  avatar: Icon(Icons.sms_rounded,
+                                      size: 16, color: _sendCustomSms ? Colors.white : const Color(0xFF2563EB)),
+                                  label: const Text('SMS Text'),
+                                  selected: _sendCustomSms,
+                                  selectedColor: const Color(0xFF2563EB),
+                                  labelStyle: TextStyle(
+                                      color: _sendCustomSms ? Colors.white : AdminColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12),
+                                  onSelected: (val) {
+                                    setDialogState(() => _sendCustomSms = val);
+                                    setState(() => _sendCustomSms = val);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: _customTitleController,
+                    decoration: InputDecoration(
+                      labelText: 'Notification Headline / Title *',
+                      prefixIcon: const Icon(Icons.title_rounded),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: _customMessageController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Alert Message Content *',
+                      prefixIcon: const Icon(Icons.message_rounded),
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogCtx),
+                        child: const Text('Cancel'),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AdminColors.deepNavy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: _isSendingCustom
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Icon(Icons.send_rounded, size: 18),
+                        label: const Text('Send Notification', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: _isSendingCustom
+                            ? null
+                            : () async {
+                                final org = ref.read(currentOrganizationProvider).value;
+                                if (org != null) {
+                                  Navigator.pop(dialogCtx);
+                                  await _sendCustomNotification(org);
+                                }
+                              },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -701,11 +970,38 @@ class _NotificationAuditScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.hub_rounded, color: AdminColors.blue, size: 22),
-                      SizedBox(width: 10),
-                      Text(
+                      orgAsync.when(
+                        data: (org) {
+                          if (org == null) return const SizedBox.shrink();
+                          return ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AdminColors.deepNavy,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            icon: _savingRules
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.save_rounded, size: 16),
+                            label: const Text('Save Rules', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            onPressed: _savingRules ? null : () => _saveRules(org),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                      const SizedBox(width: 14),
+                      const Icon(Icons.hub_rounded, color: AdminColors.blue, size: 22),
+                      const SizedBox(width: 10),
+                      const Text(
                         'Automated Event Channel Configuration',
                         style: TextStyle(
                           fontSize: 16,

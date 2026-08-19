@@ -54,28 +54,86 @@ class NotificationInboxScreen extends ConsumerWidget {
 
               final confirm = await showDialog<bool>(
                 context: context,
-                builder: (dialogCtx) => AlertDialog(
+                builder: (dialogCtx) => Dialog(
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  title: const Text('Delete All Notifications?'),
-                  content: const Text(
-                    'Are you sure you want to delete all notifications from your inbox?',
+                  elevation: 10,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: SafeRouteColors.error.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.delete_forever_rounded,
+                            color: SafeRouteColors.error,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Clear Notification Inbox?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: SafeRouteColors.deepNavy,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Are you sure you want to delete all notifications from your inbox? This action cannot be undone.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: SafeRouteColors.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () => Navigator.pop(dialogCtx, false),
+                                child: const Text('Cancel'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: SafeRouteColors.error,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () => Navigator.pop(dialogCtx, true),
+                                child: const Text(
+                                  'Clear All',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(dialogCtx, false),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: SafeRouteColors.error,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () => Navigator.pop(dialogCtx, true),
-                      child: const Text('Delete All'),
-                    ),
-                  ],
                 ),
               );
 
@@ -353,7 +411,7 @@ class _NotificationTile extends ConsumerWidget {
     } else if (eventType == NotificationEventType.tripStarted ||
         eventType == NotificationEventType.tripCompleted) {
       iconData = Icons.alt_route_rounded;
-      iconColor = SafeRouteColors.primaryBlue;
+      iconColor = const Color(0xFF2563EB);
     }
 
     return Container(

@@ -14,7 +14,10 @@ class OrganizationSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _OrganizationSettingsScreenState
-    extends ConsumerState<OrganizationSettingsScreen> {
+    extends ConsumerState<OrganizationSettingsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   final _nameController = TextEditingController();
   final _timezoneController = TextEditingController();
   final _addressController = TextEditingController();
@@ -30,10 +33,16 @@ class _OrganizationSettingsScreenState
   bool _driverEmergencyAlerts = false;
   bool _driverCustomAlerts = true;
 
-  // School Operating Hours & Bus Schedule
-  final _schoolStartTimeController = TextEditingController(text: '10:00');
-  final _schoolEndTimeController = TextEditingController(text: '17:00');
-  List<String> _workingDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  // Daily Operating Schedule for Monday..Sunday
+  final Map<String, Map<String, dynamic>> _dailySchedule = {
+    'Monday': {'enabled': true, 'start_time': '10:00', 'end_time': '17:00'},
+    'Tuesday': {'enabled': true, 'start_time': '10:00', 'end_time': '17:00'},
+    'Wednesday': {'enabled': true, 'start_time': '10:00', 'end_time': '17:00'},
+    'Thursday': {'enabled': true, 'start_time': '10:00', 'end_time': '17:00'},
+    'Friday': {'enabled': true, 'start_time': '10:00', 'end_time': '17:00'},
+    'Saturday': {'enabled': true, 'start_time': '07:00', 'end_time': '11:00'},
+    'Sunday': {'enabled': false, 'start_time': '09:00', 'end_time': '15:00'},
+  };
 
   // External API Gateway Controllers
   final _whatsappUrlController = TextEditingController();
@@ -46,6 +55,28 @@ class _OrganizationSettingsScreenState
 
   bool _isSaving = false;
   bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _nameController.dispose();
+    _timezoneController.dispose();
+    _addressController.dispose();
+    _whatsappUrlController.dispose();
+    _whatsappTokenController.dispose();
+    _smsUrlController.dispose();
+    _smsSenderIdController.dispose();
+    _smsApiKeyController.dispose();
+    _fcmProjectIdController.dispose();
+    _fcmEndpointController.dispose();
+    super.dispose();
+  }
 
   void _populateForm(Organization org) {
     if (_initialized) return;
@@ -64,10 +95,15 @@ class _OrganizationSettingsScreenState
     _driverCustomAlerts = org.driverCanSendCustomAlerts;
 
     final sched = org.schoolSchedule;
-    _schoolStartTimeController.text = sched['start_time'] as String? ?? '10:00';
-    _schoolEndTimeController.text = sched['end_time'] as String? ?? '17:00';
-    if (sched['working_days'] is List) {
-      _workingDays = List<String>.from(sched['working_days'] as List);
+    if (sched.containsKey('daily_schedule') && sched['daily_schedule'] is Map) {
+      final daily = sched['daily_schedule'] as Map<String, dynamic>;
+      daily.forEach((day, data) {
+        if (_dailySchedule.containsKey(day) && data is Map) {
+          _dailySchedule[day]!['enabled'] = data['enabled'] as bool? ?? true;
+          _dailySchedule[day]!['start_time'] = data['start_time'] as String? ?? '10:00';
+          _dailySchedule[day]!['end_time'] = data['end_time'] as String? ?? '17:00';
+        }
+      });
     }
 
     final api = org.apiParameters;
@@ -81,53 +117,20 @@ class _OrganizationSettingsScreenState
     _initialized = true;
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _timezoneController.dispose();
-    _addressController.dispose();
-    _schoolStartTimeController.dispose();
-    _schoolEndTimeController.dispose();
-    _whatsappUrlController.dispose();
-    _whatsappTokenController.dispose();
-    _smsUrlController.dispose();
-    _smsSenderIdController.dispose();
-    _smsApiKeyController.dispose();
-    _fcmProjectIdController.dispose();
-    _fcmEndpointController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickSchoolLocationOnMap() async {
-    final result = await showDialog<LocationPickResult>(
-      context: context,
-      builder: (ctx) => AdminMapPickerDialog(
-        initialLatitude: _latitude,
-        initialLongitude: _longitude,
-        initialAddress: _addressController.text,
-        title: 'Set School Destination & Campus Geofence',
-      ),
-    );
-
-    if (result != null) {
-      setState(() {
-        _latitude = result.latitude;
-        _longitude = result.longitude;
-        _addressController.text = result.address;
-      });
-    }
-  }
-
-  Future<void> _saveSettings(Organization org) async {
+  Future<void> _saveSettings(Organization currentOrg) async {
     setState(() => _isSaving = true);
     try {
-      final scheduleMap = {
-        'start_time': _schoolStartTimeController.text.trim(),
-        'end_time': _schoolEndTimeController.text.trim(),
-        'working_days': _workingDays,
+      final workingDaysList = _dailySchedule.entries
+          .where((e) => e.value['enabled'] == true)
+          .map((e) => e.key)
+          .toList();
+
+      final updatedSchedule = {
+        'daily_schedule': _dailySchedule,
+        'working_days': workingDaysList,
       };
 
-      final apiMap = {
+      final updatedApi = {
         'whatsapp_endpoint': _whatsappUrlController.text.trim(),
         'whatsapp_token': _whatsappTokenController.text.trim(),
         'sms_endpoint': _smsUrlController.text.trim(),
@@ -135,35 +138,36 @@ class _OrganizationSettingsScreenState
         'sms_api_key': _smsApiKeyController.text.trim(),
         'fcm_project_id': _fcmProjectIdController.text.trim(),
         'fcm_endpoint': _fcmEndpointController.text.trim(),
-        'school_schedule': scheduleMap,
       };
 
-      await SupabaseService.client.from('organizations').update({
-        'name': _nameController.text.trim(),
-        'timezone': _timezoneController.text.trim(),
-        'address': _addressController.text.trim().isEmpty
-            ? null
-            : _addressController.text.trim(),
-        'latitude': _latitude,
-        'longitude': _longitude,
-        'geofence_radius_meters': _geofenceRadius.toInt(),
-        'driver_can_send_emergency_alerts': _driverEmergencyAlerts,
-        'driver_can_send_custom_alerts': _driverCustomAlerts,
-        'gps_history_retention_days': _gpsRetentionDays.toInt(),
-        'notification_log_retention_days': _notificationRetentionDays.toInt(),
-        'api_parameters': apiMap,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', org.id);
+      final updatedOrg = Organization(
+        id: currentOrg.id,
+        name: _nameController.text.trim(),
+        address: _addressController.text.trim(),
+        timezone: _timezoneController.text.trim(),
+        latitude: _latitude,
+        longitude: _longitude,
+        geofenceRadiusMeters: _geofenceRadius.toInt(),
+        gpsHistoryRetentionDays: _gpsRetentionDays.toInt(),
+        notificationLogRetentionDays: _notificationRetentionDays.toInt(),
+        driverCanSendEmergencyAlerts: _driverEmergencyAlerts,
+        driverCanSendCustomAlerts: _driverCustomAlerts,
+        schoolSchedule: updatedSchedule,
+        apiParameters: updatedApi,
+        notificationSettings: currentOrg.notificationSettings,
+        createdAt: currentOrg.createdAt,
+        updatedAt: DateTime.now(),
+      );
 
-      // Reset so the form reloads fresh data from DB after save
-      _initialized = false;
+      final repo = ref.read(adminRepositoryProvider);
+      await repo.updateOrganization(updatedOrg);
+
       ref.invalidate(currentOrganizationProvider);
-      ref.invalidate(organizationStatsProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('✅ School policies & destination address saved successfully!'),
+            content: Text('✅ School settings & operating schedule saved successfully!'),
             backgroundColor: AdminColors.safetyGreen,
           ),
         );
@@ -178,9 +182,7 @@ class _OrganizationSettingsScreenState
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -190,743 +192,546 @@ class _OrganizationSettingsScreenState
 
     return Scaffold(
       backgroundColor: AdminColors.background,
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top Bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: orgAsync.when(
+        data: (org) {
+          if (org == null) {
+            return const Center(child: Text('No organization profile found'));
+          }
+
+          _populateForm(org);
+
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Top Header Row with Title & Save Button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'School Profile & Safety Policies',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AdminColors.textPrimary,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${org.name} — School Settings',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AdminColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Configure daily operating hours, geofence radius, safety policies, and API keys',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AdminColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Configure destination address, map location, driver safety permissions, and API parameters',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AdminColors.textSecondary,
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AdminColors.deepNavy,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save_rounded, size: 18),
+                      label: const Text('Save All Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: _isSaving ? null : () => _saveSettings(org),
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded),
-                  tooltip: 'Reload Settings',
-                  onPressed: () {
-                    _initialized = false;
-                    ref.invalidate(currentOrganizationProvider);
-                  },
+
+                const SizedBox(height: 16),
+
+                // Navigation Tabs Header
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AdminColors.border),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorColor: AdminColors.deepNavy,
+                    indicatorWeight: 3,
+                    labelColor: AdminColors.deepNavy,
+                    unselectedLabelColor: AdminColors.textSecondary,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    tabs: const [
+                      Tab(icon: Icon(Icons.school_rounded, size: 18), text: 'School Identity'),
+                      Tab(icon: Icon(Icons.access_time_filled_rounded, size: 18), text: 'Weekly Operating Hours'),
+                      Tab(icon: Icon(Icons.security_rounded, size: 18), text: 'Safety & Data Policies'),
+                      Tab(icon: Icon(Icons.api_rounded, size: 18), text: 'API & Push Gateways'),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Tab Views Content
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildIdentityTab(),
+                      _buildOperatingHoursTab(),
+                      _buildSafetyPoliciesTab(),
+                      _buildApiGatewaysTab(),
+                    ],
+                  ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 20),
-
-            Expanded(
-              child: orgAsync.when(
-                data: (org) {
-                  if (org == null) {
-                    return const Center(
-                      child: Text('No organization profile found.'),
-                    );
-                  }
-
-                  _populateForm(org);
-
-                  return SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Card 1: School Identity & Destination Location ──
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.domain_rounded,
-                                        color: AdminColors.deepNavy, size: 22),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'School Identity & Destination Address',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AdminColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'This address and pin point serves as the final morning destination and starting drop depot for all bus trips.',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: AdminColors.textSecondary),
-                                ),
-                                const Divider(height: 24),
-
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: TextField(
-                                        controller: _nameController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'School / Campus Name *',
-                                          prefixIcon: Icon(Icons.school_outlined),
-                                          hintText: 'e.g. Delhi Public School',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 1,
-                                      child: TextField(
-                                        controller: _timezoneController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Timezone',
-                                          prefixIcon: Icon(Icons.access_time_rounded),
-                                          hintText: 'Asia/Kolkata',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-
-                                // Destination Address & Map Picker
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _addressController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'School Destination Street Address',
-                                          prefixIcon: Icon(Icons.location_city_rounded),
-                                          hintText: 'e.g. 45th Main Road, Ring Road Campus',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AdminColors.deepNavy,
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 20, vertical: 16),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      icon: const Icon(Icons.map_rounded, size: 18),
-                                      label: const Text('Pick on Map',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      onPressed: _pickSchoolLocationOnMap,
-                                    ),
-                                  ],
-                                ),
-
-                                const SizedBox(height: 14),
-
-                                // Location Coordinates Status Banner
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: _latitude != null && _longitude != null
-                                        ? AdminColors.safetyGreen
-                                            .withValues(alpha: 0.1)
-                                        : AdminColors.warning
-                                            .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: _latitude != null && _longitude != null
-                                          ? AdminColors.safetyGreen
-                                              .withValues(alpha: 0.4)
-                                          : AdminColors.warning
-                                              .withValues(alpha: 0.4),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _latitude != null && _longitude != null
-                                            ? Icons.check_circle_rounded
-                                            : Icons.warning_amber_rounded,
-                                        color: _latitude != null && _longitude != null
-                                            ? AdminColors.safetyGreen
-                                            : AdminColors.warning,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          _latitude != null && _longitude != null
-                                              ? 'Destination Pin Active: Lat ${_latitude!.toStringAsFixed(5)}, Lon ${_longitude!.toStringAsFixed(5)} (Arrival Geofence: ${_geofenceRadius.toInt()}m)'
-                                              : 'No map coordinate pinned yet. Click "Pick on Map" or search the campus location to place marker.',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: _latitude != null && _longitude != null
-                                                ? AdminColors.safetyGreen
-                                                : AdminColors.warning,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Card 1.5: School Operating Hours & Bus Schedule ──
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.schedule_rounded,
-                                        color: AdminColors.blue, size: 22),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'School Operating Hours & Bus Schedule',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AdminColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                const Text(
-                                  'Automated push notifications for morning pickup and evening return routes dynamically adapt based on these hours.',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: AdminColors.textSecondary),
-                                ),
-                                const Divider(height: 24),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _schoolStartTimeController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'School Start Time (e.g. 10:00 AM)',
-                                          hintText: '10:00',
-                                          prefixIcon: Icon(Icons.wb_sunny_outlined),
-                                          helperText: 'Morning bus arrival notification cutoff',
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _schoolEndTimeController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'School Dispersal Time (e.g. 05:00 PM)',
-                                          hintText: '17:00',
-                                          prefixIcon: Icon(Icons.nights_stay_outlined),
-                                          helperText: 'Evening return route start trigger',
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                const Text(
-                                  'Operating Days:',
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: AdminColors.textPrimary),
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    'Monday',
-                                    'Tuesday',
-                                    'Wednesday',
-                                    'Thursday',
-                                    'Friday',
-                                    'Saturday',
-                                    'Sunday',
-                                  ].map((day) {
-                                    final isSelected = _workingDays.contains(day);
-                                    return FilterChip(
-                                      label: Text(day),
-                                      selected: isSelected,
-                                      selectedColor: AdminColors.deepNavy.withValues(alpha: 0.15),
-                                      checkmarkColor: AdminColors.deepNavy,
-                                      labelStyle: TextStyle(
-                                        color: isSelected
-                                            ? AdminColors.deepNavy
-                                            : AdminColors.textSecondary,
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                      ),
-                                      onSelected: (selected) {
-                                        setState(() {
-                                          if (selected) {
-                                            _workingDays.add(day);
-                                          } else {
-                                            _workingDays.remove(day);
-                                          }
-                                        });
-                                      },
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Card 2: Driver Permissions & Alert Rules ──
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.security_rounded,
-                                        color: AdminColors.safetyGreen, size: 20),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Driver Permissions & Broadcast Controls',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AdminColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 24),
-                                SwitchListTile(
-                                  title: const Text(
-                                    'Allow Drivers to Broadcast Emergency SOS Alerts',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14),
-                                  ),
-                                  subtitle: const Text(
-                                    'When enabled, drivers can trigger instant multi-channel push & SMS emergency dispatches',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: AdminColors.textSecondary),
-                                  ),
-                                  value: _driverEmergencyAlerts,
-                                  activeTrackColor: AdminColors.safetyGreen,
-                                  onChanged: (val) {
-                                    setState(() => _driverEmergencyAlerts = val);
-                                  },
-                                ),
-                                const Divider(),
-                                SwitchListTile(
-                                  title: const Text(
-                                    'Allow Drivers to Send Delay & Traffic Updates',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14),
-                                  ),
-                                  subtitle: const Text(
-                                    'Permits drivers to send custom delay notes to parent passenger manifest',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: AdminColors.textSecondary),
-                                  ),
-                                  value: _driverCustomAlerts,
-                                  activeTrackColor: AdminColors.blue,
-                                  onChanged: (val) {
-                                    setState(() => _driverCustomAlerts = val);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Card 3: Data Retention Policies ──
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.auto_delete_rounded,
-                                        color: AdminColors.warning, size: 20),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'Data Retention & Compliance Rules',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AdminColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const Divider(height: 24),
-
-                                // GPS Breadcrumbs Retention
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'GPS Breadcrumb History Retention',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14),
-                                        ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          'Historical route tracking telemetry purged after this duration',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: AdminColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AdminColors.deepNavy,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '${_gpsRetentionDays.toInt()} days',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Slider(
-                                  value: _gpsRetentionDays,
-                                  min: 30,
-                                  max: 365,
-                                  divisions: 11,
-                                  activeColor: AdminColors.deepNavy,
-                                  label: '${_gpsRetentionDays.toInt()} days',
-                                  onChanged: (val) {
-                                    setState(() => _gpsRetentionDays = val);
-                                  },
-                                ),
-
-                                const SizedBox(height: 20),
-
-                                // Notification Logs Retention
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Notification Audit Logs Retention',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14),
-                                        ),
-                                        SizedBox(height: 2),
-                                        Text(
-                                          'Delivery receipts and multi-channel audit entries purged after this limit',
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: AdminColors.textSecondary),
-                                        ),
-                                      ],
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AdminColors.blueLight,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Text(
-                                        '${_notificationRetentionDays.toInt()} days',
-                                        style: const TextStyle(
-                                          color: AdminColors.blue,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Slider(
-                                  value: _notificationRetentionDays,
-                                  min: 30,
-                                  max: 365,
-                                  divisions: 11,
-                                  activeColor: AdminColors.blue,
-                                  label: '${_notificationRetentionDays.toInt()} days',
-                                  onChanged: (val) {
-                                    setState(() => _notificationRetentionDays = val);
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Card 4: External API Gateway & Service Parameters ──
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(Icons.api_rounded,
-                                        color: AdminColors.deepNavy, size: 22),
-                                    SizedBox(width: 10),
-                                    Text(
-                                      'External Notification Gateway & API Parameters',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AdminColors.textPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Configure REST API endpoints, Webhook tokens, and SMS / WhatsApp provider secrets',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: AdminColors.textSecondary),
-                                ),
-                                const Divider(height: 24),
-
-                                // WhatsApp Business API
-                                const Text(
-                                  '💬 WhatsApp Business Cloud API',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: AdminColors.safetyGreen),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: TextField(
-                                        controller: _whatsappUrlController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'WhatsApp API Endpoint URL',
-                                          hintText: 'https://graph.facebook.com/v18.0/FROM_PHONE_ID/messages',
-                                          prefixIcon: Icon(Icons.link_rounded),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 1,
-                                      child: TextField(
-                                        controller: _whatsappTokenController,
-                                        obscureText: true,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Bearer Access Token',
-                                          hintText: 'EAAG...',
-                                          prefixIcon: Icon(Icons.key_rounded),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-
-                                // SMS Gateway
-                                const Text(
-                                  '📱 SMS Gateway API (Twilio / MSG91 / Fast2SMS)',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: AdminColors.blue),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: TextField(
-                                        controller: _smsUrlController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'SMS REST Endpoint URL',
-                                          hintText: 'https://api.msg91.com/api/v5/flow/',
-                                          prefixIcon: Icon(Icons.http_rounded),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 1,
-                                      child: TextField(
-                                        controller: _smsSenderIdController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Sender ID / Header',
-                                          hintText: 'SAFRTE',
-                                          prefixIcon: Icon(Icons.badge_outlined),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      flex: 1,
-                                      child: TextField(
-                                        controller: _smsApiKeyController,
-                                        obscureText: true,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Auth API Key / Token',
-                                          hintText: 'sec_...',
-                                          prefixIcon: Icon(Icons.password_rounded),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-
-                                // Firebase Cloud Messaging (FCM Push)
-                                const Text(
-                                  '🔥 Firebase Cloud Messaging (FCM Push V1)',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: AdminColors.warning),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _fcmProjectIdController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'FCM Service Account Project ID',
-                                          hintText: 'saferoute-mobile-app',
-                                          prefixIcon: Icon(Icons.cloud_outlined),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _fcmEndpointController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Server Key / OAuth Endpoint',
-                                          hintText: 'https://fcm.googleapis.com/v1/projects/...',
-                                          prefixIcon: Icon(Icons.shield_outlined),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Save Button
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AdminColors.deepNavy,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 28, vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            icon: _isSaving
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Icon(Icons.save_rounded, size: 18),
-                            label: const Text(
-                              'Save School Settings & Address',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: _isSaving ? null : () => _saveSettings(org),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const Center(
-                  child: CircularProgressIndicator(color: AdminColors.yellow),
-                ),
-                error: (e, _) => Center(
-                  child: Text('Failed to load school settings: $e'),
-                ),
-              ),
-            ),
-          ],
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AdminColors.yellow),
+        ),
+        error: (err, _) => Center(
+          child: Text('Failed to load organization settings: $err'),
         ),
       ),
     );
+  }
+
+  // ── Tab 1: School Identity & Location ──────────────────────────────────────
+  Widget _buildIdentityTab() {
+    return SingleChildScrollView(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'School Identity & Location Profile',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'School / Institution Name *',
+                  prefixIcon: Icon(Icons.corporate_fare_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _timezoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Timezone *',
+                  prefixIcon: Icon(Icons.language_rounded),
+                  hintText: 'Asia/Kolkata',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _addressController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'School Physical Address',
+                  prefixIcon: Icon(Icons.place_rounded),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Divider(),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'School Arrival Destination Coordinates',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AdminColors.textPrimary),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _latitude != null && _longitude != null
+                            ? 'Lat: ${_latitude!.toStringAsFixed(5)}, Lng: ${_longitude!.toStringAsFixed(5)}'
+                            : 'No destination coordinates set on OpenStreetMap',
+                        style: const TextStyle(fontSize: 12, color: AdminColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AdminColors.deepNavy,
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.map_rounded, size: 16),
+                    label: const Text('Pick Location on OpenStreetMap'),
+                    onPressed: () async {
+                      final result = await showDialog<Map<String, double>>(
+                        context: context,
+                        builder: (ctx) => AdminMapPickerDialog(
+                          initialLatitude: _latitude,
+                          initialLongitude: _longitude,
+                        ),
+                      );
+                      if (result != null) {
+                        setState(() {
+                          _latitude = result['lat'];
+                          _longitude = result['lng'];
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Geofence Arrival Radius: ${_geofenceRadius.toInt()} meters',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Slider(
+                    value: _geofenceRadius,
+                    min: 50,
+                    max: 1000,
+                    divisions: 19,
+                    label: '${_geofenceRadius.toInt()}m',
+                    activeColor: AdminColors.deepNavy,
+                    onChanged: (val) => setState(() => _geofenceRadius = val),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Tab 2: Weekly Operating Schedule (Configurable per Day) ────────────────
+  Widget _buildOperatingHoursTab() {
+    final daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    return SingleChildScrollView(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.calendar_month_rounded, color: AdminColors.deepNavy, size: 22),
+                  SizedBox(width: 10),
+                  Text(
+                    'Configurable Daily Operating Hours (Mon – Sun)',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Configure specific start and end times for each day of the week (e.g. Mon-Fri 10-5, Saturday 7-11 morning)',
+                style: TextStyle(fontSize: 12, color: AdminColors.textSecondary),
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              ...daysOfWeek.map((day) {
+                final dayData = _dailySchedule[day]!;
+                final isEnabled = dayData['enabled'] as bool;
+                final startTime = dayData['start_time'] as String;
+                final endTime = dayData['end_time'] as String;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AdminColors.border, width: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Switch(
+                        value: isEnabled,
+                        activeColor: AdminColors.deepNavy,
+                        onChanged: (val) {
+                          setState(() {
+                            _dailySchedule[day]!['enabled'] = val;
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 110,
+                        child: Text(
+                          day,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: isEnabled ? AdminColors.textPrimary : Colors.grey,
+                          ),
+                        ),
+                      ),
+                      if (isEnabled) ...[
+                        const Icon(Icons.schedule_rounded, size: 16, color: AdminColors.textSecondary),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () async {
+                            final parts = startTime.split(':');
+                            final initialTime = TimeOfDay(
+                              hour: int.tryParse(parts[0]) ?? 10,
+                              minute: int.tryParse(parts[1]) ?? 0,
+                            );
+                            final picked = await showTimePicker(context: context, initialTime: initialTime);
+                            if (picked != null) {
+                              final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                              setState(() {
+                                _dailySchedule[day]!['start_time'] = formatted;
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AdminColors.border),
+                            ),
+                            child: Text(
+                              _formatTimeString(startTime),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          child: Text('to', style: TextStyle(color: AdminColors.textSecondary)),
+                        ),
+                        InkWell(
+                          onTap: () async {
+                            final parts = endTime.split(':');
+                            final initialTime = TimeOfDay(
+                              hour: int.tryParse(parts[0]) ?? 17,
+                              minute: int.tryParse(parts[1]) ?? 0,
+                            );
+                            final picked = await showTimePicker(context: context, initialTime: initialTime);
+                            if (picked != null) {
+                              final formatted = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                              setState(() {
+                                _dailySchedule[day]!['end_time'] = formatted;
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AdminColors.border),
+                            ),
+                            child: Text(
+                              _formatTimeString(endTime),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Closed / Off Day',
+                            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Tab 3: Safety & Data Policies ──────────────────────────────────────────
+  Widget _buildSafetyPoliciesTab() {
+    return SingleChildScrollView(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Driver Privileges & Safety Alert Rules',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: const Text('Drivers Can Send Emergency SOS Alerts'),
+                subtitle: const Text('Allows driver app to trigger emergency broadcasts to parents'),
+                value: _driverEmergencyAlerts,
+                activeColor: AdminColors.deepNavy,
+                onChanged: (val) => setState(() => _driverEmergencyAlerts = val),
+              ),
+              SwitchListTile(
+                title: const Text('Drivers Can Send Custom Announcements'),
+                subtitle: const Text('Allows drivers to dispatch route delay or custom notices'),
+                value: _driverCustomAlerts,
+                activeColor: AdminColors.deepNavy,
+                onChanged: (val) => setState(() => _driverCustomAlerts = val),
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 16),
+              const Text(
+                'Data Retention & Storage Limits',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'GPS History Retention: ${_gpsRetentionDays.toInt()} Days',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              Slider(
+                value: _gpsRetentionDays,
+                min: 30,
+                max: 365,
+                divisions: 11,
+                label: '${_gpsRetentionDays.toInt()} Days',
+                activeColor: AdminColors.deepNavy,
+                onChanged: (val) => setState(() => _gpsRetentionDays = val),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Notification Log Retention: ${_notificationRetentionDays.toInt()} Days',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              Slider(
+                value: _notificationRetentionDays,
+                min: 30,
+                max: 365,
+                divisions: 11,
+                label: '${_notificationRetentionDays.toInt()} Days',
+                activeColor: AdminColors.deepNavy,
+                onChanged: (val) => setState(() => _notificationRetentionDays = val),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Tab 4: API Gateways & Cloud Messaging ──────────────────────────────────
+  Widget _buildApiGatewaysTab() {
+    return SingleChildScrollView(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'External Multi-Channel Messaging Gateways',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _whatsappUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'WhatsApp Business API Endpoint URL',
+                  prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _whatsappTokenController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'WhatsApp API Bearer Token',
+                  prefixIcon: Icon(Icons.key_rounded),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _smsUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'SMS Gateway HTTP Endpoint',
+                  prefixIcon: Icon(Icons.sms_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _smsSenderIdController,
+                decoration: const InputDecoration(
+                  labelText: 'SMS Sender ID / Header',
+                  prefixIcon: Icon(Icons.badge_rounded),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _smsApiKeyController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'SMS API Key Secret',
+                  prefixIcon: Icon(Icons.lock_rounded),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _fcmProjectIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Firebase FCM Project ID',
+                  prefixIcon: Icon(Icons.cloud_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _fcmEndpointController,
+                decoration: const InputDecoration(
+                  labelText: 'FCM HTTP v1 API Endpoint',
+                  prefixIcon: Icon(Icons.link_rounded),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatTimeString(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      final tod = TimeOfDay(hour: hour, minute: minute);
+      final period = tod.period == DayPeriod.am ? 'AM' : 'PM';
+      final formattedHour = tod.hourOfPeriod == 0 ? 12 : tod.hourOfPeriod;
+      final formattedMinute = tod.minute.toString().padLeft(2, '0');
+      return '$formattedHour:$formattedMinute $period';
+    } catch (_) {
+      return timeStr;
+    }
   }
 }

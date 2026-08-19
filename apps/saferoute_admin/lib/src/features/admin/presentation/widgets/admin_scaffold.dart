@@ -107,17 +107,17 @@ class AdminScaffold extends ConsumerWidget {
                 ),
                 _buildNavItem(
                   context,
-                  icon: Icons.school_rounded,
-                  label: 'Students & Stops',
-                  route: '/admin/students',
-                  isSelected: currentPath == '/admin/students',
-                ),
-                _buildNavItem(
-                  context,
                   icon: Icons.people_alt_rounded,
                   label: 'Parents & Guardians',
                   route: '/admin/parents',
                   isSelected: currentPath == '/admin/parents',
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.school_rounded,
+                  label: 'Students & Stops',
+                  route: '/admin/students',
+                  isSelected: currentPath == '/admin/students',
                 ),
                 _buildNavItem(
                   context,

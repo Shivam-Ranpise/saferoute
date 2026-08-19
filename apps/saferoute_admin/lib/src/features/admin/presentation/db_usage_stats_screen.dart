@@ -289,6 +289,76 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
 
             const SizedBox(height: 24),
 
+            // Supabase Free Tier Allocation Breakdown Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AdminColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3ECF8E).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.bolt_rounded, color: Color(0xFF3ECF8E), size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Supabase Free Tier Limits & Resource Allocation',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AdminColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildQuotaRow(
+                    title: 'Database Storage',
+                    usedText: '${(totalRows * 0.45).toStringAsFixed(1)} KB Used',
+                    quotaText: '500 MB Free Quota',
+                    progress: (totalRows * 0.45 / (500 * 1024)).clamp(0.01, 1.0),
+                    color: const Color(0xFF3ECF8E),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildQuotaRow(
+                    title: 'File & Media Storage',
+                    usedText: '0 MB Used',
+                    quotaText: '1.0 GB Free Quota',
+                    progress: 0.02,
+                    color: const Color(0xFF2563EB),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildQuotaRow(
+                    title: 'Monthly Active Users (MAU)',
+                    usedText: '$_profilesCount Users Active',
+                    quotaText: '50,000 Free MAU Limit',
+                    progress: (_profilesCount / 50000).clamp(0.01, 1.0),
+                    color: const Color(0xFF8B5CF6),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildQuotaRow(
+                    title: 'Realtime Egress Bandwidth',
+                    usedText: 'Active Stream',
+                    quotaText: '5 GB Monthly Free Limit',
+                    progress: 0.05,
+                    color: const Color(0xFFF97316),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
             // System Infrastructure Status Card
             Container(
               padding: const EdgeInsets.all(20),
@@ -310,6 +380,8 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildInfoRow('Database Provider', 'Supabase Cloud (PostgreSQL 15)'),
+                  const Divider(height: 20),
+                  _buildInfoRow('Free Tier Quota', '500 MB Database / 1 GB Storage / 50K MAU'),
                   const Divider(height: 20),
                   _buildInfoRow('Endpoint Host', 'usexaanovsmmzjorlkyu.supabase.co'),
                   const Divider(height: 20),
@@ -404,6 +476,66 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
             fontSize: 13,
             fontWeight: FontWeight.bold,
             color: AdminColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuotaRow({
+    required String title,
+    required String usedText,
+    required String quotaText,
+    required double progress,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AdminColors.textPrimary,
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  usedText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+                const Text(
+                  ' / ',
+                  style: TextStyle(fontSize: 12, color: AdminColors.textSecondary),
+                ),
+                Text(
+                  quotaText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AdminColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            backgroundColor: color.withValues(alpha: 0.15),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ),
       ],
