@@ -15,8 +15,6 @@ class AppVoiceService {
     double pitch = 1.0,
     String language = 'en-IN',
   }) async {
-    if (_isInitialized) return;
-
     try {
       if (Platform.isIOS) {
         await _tts.setIosAudioCategory(
@@ -28,12 +26,26 @@ class AppVoiceService {
         );
       }
 
-      await _tts.setLanguage(language);
+      // Check language availability with automatic fallback
+      try {
+        final isAvailable = await _tts.isLanguageAvailable(language);
+        if (isAvailable == true || isAvailable == 1) {
+          await _tts.setLanguage(language);
+        } else {
+          await _tts.setLanguage('en-US');
+        }
+      } catch (_) {
+        await _tts.setLanguage('en-US');
+      }
+
       await _tts.setVolume(volume.clamp(0.0, 1.0));
       await _tts.setSpeechRate(rate.clamp(0.0, 1.0));
       await _tts.setPitch(pitch.clamp(0.5, 2.0));
 
-      await _tts.awaitSpeakCompletion(true);
+      if (Platform.isAndroid) {
+        await _tts.setQueueMode(1); // Immediate flush & speak
+      }
+
       _isInitialized = true;
       AppLogger.info('AppVoiceService initialized successfully', context: 'VoiceTTS');
     } catch (e) {
@@ -48,7 +60,17 @@ class AppVoiceService {
     required String language,
   }) async {
     try {
-      await _tts.setLanguage(language);
+      try {
+        final isAvailable = await _tts.isLanguageAvailable(language);
+        if (isAvailable == true || isAvailable == 1) {
+          await _tts.setLanguage(language);
+        } else {
+          await _tts.setLanguage('en-US');
+        }
+      } catch (_) {
+        await _tts.setLanguage('en-US');
+      }
+
       await _tts.setVolume(volume.clamp(0.0, 1.0));
       await _tts.setSpeechRate(rate.clamp(0.0, 1.0));
       await _tts.setPitch(pitch.clamp(0.5, 2.0));
@@ -89,7 +111,40 @@ class AppVoiceService {
     final lowerTitle = cleanTitle.toLowerCase();
     final lowerMsg = cleanMsg.toLowerCase();
 
-    // 1. Emergency SOS / Critical Delays: Read full detailed message content so parents know the exact situation!
+    // Helper to format announcements and alerts without duplicate words
+    String formatWithPrefix(String prefix, String title, String msg) {
+      final tLower = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+      // Check if title is just a generic category name
+      final isGenericTitle = tLower.isEmpty ||
+          tLower == 'schoolannouncement' ||
+          tLower == 'announcement' ||
+          tLower == 'notice' ||
+          tLower == 'urgentalert' ||
+          tLower == 'alert' ||
+          tLower == 'emergency' ||
+          tLower == 'emergencynotice' ||
+          tLower == 'notification' ||
+          tLower == 'customalert' ||
+          tLower == 'saferoute';
+
+      if (isGenericTitle) {
+        return msg.isNotEmpty ? '$prefix: $msg' : '$prefix: $title';
+      }
+
+      // If title already includes the prefix
+      if (title.toLowerCase().contains(prefix.toLowerCase())) {
+        return msg.isNotEmpty ? '$title. $msg' : title;
+      }
+
+      if (title.isNotEmpty && msg.isNotEmpty && !msg.toLowerCase().contains(title.toLowerCase())) {
+        return '$prefix: $title. $msg';
+      }
+
+      return '$prefix: ${msg.isNotEmpty ? msg : title}';
+    }
+
+    // 1. Emergency SOS / Critical Delays
     if (lowerTitle.contains('emergency') ||
         lowerTitle.contains('sos') ||
         lowerTitle.contains('critical') ||
@@ -99,11 +154,7 @@ class AppVoiceService {
         lowerMsg.contains('sos') ||
         lowerMsg.contains('emergency') ||
         lowerMsg.contains('delay')) {
-      if (cleanTitle.isNotEmpty && cleanMsg.isNotEmpty && !cleanMsg.toLowerCase().contains(cleanTitle.toLowerCase())) {
-        return 'Urgent Alert: $cleanTitle. $cleanMsg';
-      } else {
-        return 'Urgent Alert: ${cleanMsg.isNotEmpty ? cleanMsg : cleanTitle}';
-      }
+      return formatWithPrefix('Urgent Alert', cleanTitle, cleanMsg);
     }
 
     // 2. Bus Approaching / Nearby
@@ -131,13 +182,7 @@ class AppVoiceService {
       return 'Your child has been safely dropped off.';
     }
 
-    // 7. Custom School Announcement / Notice from Admin: Read exact notice title & content
-    if (cleanTitle.isNotEmpty && cleanMsg.isNotEmpty && !cleanMsg.toLowerCase().contains(cleanTitle.toLowerCase())) {
-      return 'School Announcement: $cleanTitle. $cleanMsg';
-    } else if (cleanMsg.isNotEmpty) {
-      return 'School Announcement: $cleanMsg';
-    } else {
-      return 'School Announcement: $cleanTitle';
-    }
+    // 7. Custom School Announcement / Notice from Admin
+    return formatWithPrefix('School Announcement', cleanTitle, cleanMsg);
   }
 }
