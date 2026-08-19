@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../providers/parent_providers.dart';
 
@@ -221,6 +222,69 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                   },
                 ),
               ],
+            ),
+          ),
+          // App Language Selector Card
+          const Text(
+            'App & Voice Language',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: SafeRouteColors.deepNavy,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: SafeRouteColors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.translate_rounded, color: SafeRouteColors.blue),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Language / भाषा',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                            Text(
+                              'Select preferred language for app and spoken alerts',
+                              style: TextStyle(fontSize: 12, color: SafeRouteColors.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'en', label: Text('English')),
+                      ButtonSegment(value: 'hi', label: Text('हिंदी')),
+                      ButtonSegment(value: 'mr', label: Text('मराठी')),
+                    ],
+                    selected: {ref.watch(appLocaleProvider).languageCode},
+                    onSelectionChanged: (newSet) {
+                      if (newSet.isNotEmpty) {
+                        ref.read(appLocaleProvider.notifier).setLanguage(newSet.first);
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import 'src/features/notifications/services/app_notification_service.dart';
+import 'src/providers/locale_provider.dart';
 import 'src/router/app_router.dart';
 import 'src/theme/app_theme.dart';
 
@@ -86,8 +87,13 @@ class SafeRouteApp extends ConsumerWidget {
       theme: SafeRouteTheme.lightTheme,
       routerConfig: router,
 
-      // Localization (English only for Phase 1)
-      supportedLocales: const [Locale('en', 'US')],
+      // Multi-Language Support (English, Hindi, Marathi)
+      supportedLocales: const [
+        Locale('en', 'IN'),
+        Locale('hi', 'IN'),
+        Locale('mr', 'IN'),
+      ],
+      locale: ref.watch(appLocaleProvider),
 
       // Accessibility
       builder: (context, child) {
