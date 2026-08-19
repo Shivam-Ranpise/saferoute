@@ -328,20 +328,6 @@ class _NotificationAuditScreenState
                   children: [
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AdminColors.deepNavy,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      icon: const Icon(Icons.send_rounded, size: 18),
-                      label: const Text('Compose Custom Notice'),
-                      onPressed: () => _showComposeNotificationDialog(context),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
                         backgroundColor: AdminColors.error,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -740,8 +726,6 @@ class _NotificationAuditScreenState
   }
 
   Widget _buildCustomBroadcastTab(AsyncValue<Organization?> orgAsync) {
-    final parentsAsync = ref.watch(adminParentsProvider);
-
     return orgAsync.when(
       data: (org) {
         if (org == null) return const Center(child: Text('No organization profile.'));
@@ -753,121 +737,46 @@ class _NotificationAuditScreenState
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const Row(
                         children: [
-                          const Row(
+                          Icon(Icons.campaign_rounded, color: AdminColors.deepNavy, size: 28),
+                          SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.campaign_rounded, color: AdminColors.deepNavy, size: 28),
-                              SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'School Announcement & Custom Notification Dispatcher',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: AdminColors.textPrimary,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Broadcast instant updates, trip delay notices, or emergency alerts to all parents or specific individuals.',
-                                    style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
-                                  ),
-                                ],
+                              Text(
+                                'School Announcement & Custom Notification Dispatcher',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AdminColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Broadcast instant updates, trip delay notices, or emergency alerts to all parents or specific individuals.',
+                                style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
                               ),
                             ],
-                          ),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AdminColors.deepNavy,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            icon: const Icon(Icons.add_comment_rounded, size: 18),
-                            label: const Text(
-                              'Compose Custom Notice',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            onPressed: () => _showComposeNotificationDialog(context),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 20),
-
-                      // Information Grid Cards
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final count = constraints.maxWidth > 800 ? 3 : 1;
-                          return GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: count,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 2.4,
-                            children: [
-                              _buildFeatureInfoCard(
-                                icon: Icons.people_alt_rounded,
-                                color: AdminColors.deepNavy,
-                                title: 'Registered Parents',
-                                subtitle: parentsAsync.maybeWhen(
-                                  data: (p) => '${p.length} Parents Enrolled',
-                                  orElse: () => 'Active Directory',
-                                ),
-                              ),
-                              _buildFeatureInfoCard(
-                                icon: Icons.hub_rounded,
-                                color: AdminColors.safetyGreen,
-                                title: 'Multi-Channel Gateways',
-                                subtitle: 'Push (FCM), WhatsApp, SMS',
-                              ),
-                              _buildFeatureInfoCard(
-                                icon: Icons.speed_rounded,
-                                color: const Color(0xFFF97316),
-                                title: 'Priority Dispatching',
-                                subtitle: 'Standard, Important, Emergency',
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AdminColors.border),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AdminColors.deepNavy,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.info_outline_rounded, color: AdminColors.deepNavy, size: 22),
-                            const SizedBox(width: 14),
-                            const Expanded(
-                              child: Text(
-                                'Click the "Compose Custom Notice" button to launch the interactive message composer modal. Messages will be instantly delivered across configured channels and logged in the audit trail.',
-                                style: TextStyle(fontSize: 13, color: AdminColors.textPrimary),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            OutlinedButton.icon(
-                              icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                              label: const Text('Open Modal'),
-                              onPressed: () => _showComposeNotificationDialog(context),
-                            ),
-                          ],
+                        icon: const Icon(Icons.add_comment_rounded, size: 18),
+                        label: const Text(
+                          'Compose Custom Notice',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         ),
+                        onPressed: () => _showComposeNotificationDialog(context),
                       ),
                     ],
                   ),
@@ -879,59 +788,6 @@ class _NotificationAuditScreenState
       },
       loading: () => const Center(child: CircularProgressIndicator(color: AdminColors.yellow)),
       error: (e, _) => Center(child: Text('Error: $e')),
-    );
-  }
-
-  Widget _buildFeatureInfoCard({
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AdminColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AdminColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AdminColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
