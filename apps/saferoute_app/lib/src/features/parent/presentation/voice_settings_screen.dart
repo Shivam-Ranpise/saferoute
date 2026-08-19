@@ -237,6 +237,11 @@ class VoiceSettingsScreen extends ConsumerWidget {
               spokenText: 'Good news! Your child has safely reached the school.',
             ),
 
+            /*
+            // =========================================================================
+            // FUTURE FEATURE: Student Boarded & Dropped Off Template Preview Cards
+            // (Uncomment if RFID / manual check-in is enabled in future)
+            // =========================================================================
             // Template 3: Student Boarded
             _buildTemplateCard(
               icon: Icons.how_to_reg_rounded,
@@ -252,8 +257,10 @@ class VoiceSettingsScreen extends ConsumerWidget {
               title: 'Student Safely Dropped Off',
               spokenText: 'Your child has been safely dropped off at home.',
             ),
+            // =========================================================================
+            */
 
-            // Template 5: Emergency SOS (Reads full detail)
+            // Template 3: Emergency SOS (Reads full detail)
             _buildTemplateCard(
               icon: Icons.warning_rounded,
               color: SafeRouteColors.error,

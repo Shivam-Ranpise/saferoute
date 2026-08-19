@@ -172,6 +172,11 @@ class AppVoiceService {
       return 'Good news! Your child has safely reached the school.';
     }
 
+    /*
+    // =========================================================================
+    // FUTURE FEATURE: Student Boarded & Dropped Off Announcements
+    // (Uncomment if RFID / manual boarding check-in is enabled in the future)
+    // =========================================================================
     // 5. Student Boarded
     if (lowerTitle.contains('boarded') || lowerMsg.contains('boarded')) {
       return 'Your child has safely boarded the school bus.';
@@ -181,6 +186,8 @@ class AppVoiceService {
     if (lowerTitle.contains('dropped') || lowerMsg.contains('dropped off')) {
       return 'Your child has been safely dropped off.';
     }
+    // =========================================================================
+    */
 
     // 7. Custom School Announcement / Notice from Admin
     return formatWithPrefix('School Announcement', cleanTitle, cleanMsg);
