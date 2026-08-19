@@ -153,6 +153,7 @@ class DriverRepository {
           message = 'The school bus has started its route and will arrive soon. Please be ready at your pickup stop.';
         }
 
+        final driverProfileId = SupabaseService.client.auth.currentUser?.id;
         final eventRes = await SupabaseService.client
             .from(AppConstants.tableNotificationEvents)
             .insert({
@@ -161,8 +162,8 @@ class DriverRepository {
               'title': title,
               'message': message,
               'trip_id': trip.id,
-              'priority': 'STANDARD',
-              'created_at': now.toIso8601String(),
+              'priority': 'NORMAL', // DB enum: NORMAL | HIGH | EMERGENCY
+              if (driverProfileId != null) 'sender_profile_id': driverProfileId,
             })
             .select()
             .single();
@@ -352,6 +353,8 @@ class DriverRepository {
   }) async {
     try {
       final now = DateTime.now().toIso8601String();
+      final driverProfileId = SupabaseService.client.auth.currentUser?.id;
+      // DB enum: notification_priority = ('NORMAL', 'HIGH', 'EMERGENCY')
       final eventRes = await SupabaseService.client
           .from(AppConstants.tableNotificationEvents)
           .insert({
@@ -361,7 +364,8 @@ class DriverRepository {
             'message': description,
             'trip_id': tripId,
             if (targetChildId != null) 'child_id': targetChildId,
-            'priority': isDelay ? 'STANDARD' : 'URGENT',
+            'priority': isDelay ? 'NORMAL' : 'EMERGENCY',
+            if (driverProfileId != null) 'sender_profile_id': driverProfileId,
             'created_at': now,
           })
           .select()
@@ -370,21 +374,17 @@ class DriverRepository {
       final eventId = eventRes['id'] as String;
 
       if (targetParentProfileId != null && targetParentProfileId.isNotEmpty) {
-        // Targeted delivery to specific parent profile
-        final deliveries = [
-          {
-            'notification_event_id': eventId,
-            'organization_id': organizationId,
-            'recipient_profile_id': targetParentProfileId,
-            'channel': 'PUSH',
-            'status': 'SENT',
-            'created_at': now,
-            'sent_at': now,
-          }
-        ];
+        // Targeted delivery to one specific parent profile
+        // DB columns: notification_event_id, organization_id, recipient_profile_id, channel, status, created_at
         await SupabaseService.client
             .from(AppConstants.tableNotificationDeliveries)
-            .insert(deliveries);
+            .insert({
+              'notification_event_id': eventId,
+              'organization_id': organizationId,
+              'recipient_profile_id': targetParentProfileId,
+              'channel': 'PUSH',
+              'status': 'SENT',
+            });
       } else {
         // Broadcast to all enrolled parents of this bus
         await _dispatchDeliveriesForEvent(
@@ -394,11 +394,12 @@ class DriverRepository {
         );
       }
 
-      AppLogger.info('Alert triggered for trip: $tripId (isDelay: $isDelay) deliveries dispatched (targetParent: $targetParentProfileId)',
-          context: 'DriverRepository');
+      AppLogger.info(
+        'Alert triggered for trip: $tripId (isDelay: $isDelay, targetParent: $targetParentProfileId)',
+        context: 'DriverRepository',
+      );
     } catch (e) {
-      AppLogger.error('Failed to trigger alert: $tripId',
-          error: e, context: 'DriverRepository');
+      AppLogger.error('Failed to trigger alert: $tripId', error: e, context: 'DriverRepository');
       rethrow;
     }
   }
@@ -410,13 +411,11 @@ class DriverRepository {
     String? busId,
   }) async {
     try {
-      final now = DateTime.now().toIso8601String();
       final Set<String> recipientProfileIds = {};
 
-      // 1. Try finding parents whose children are assigned to this bus
-      if (busId != null) {
+      // Step 1: try finding parents whose children are on this bus
+      if (busId != null && busId.isNotEmpty) {
         try {
-          // Step 1a: get all children for this bus
           final childrenRes = await SupabaseService.client
               .from(AppConstants.tableChildren)
               .select('parent_id')
@@ -429,7 +428,6 @@ class DriverRepository {
               .toSet();
 
           if (parentIds.isNotEmpty) {
-            // Step 1b: fetch profile_ids for those parent records
             final parentsRes = await SupabaseService.client
                 .from(AppConstants.tableParents)
                 .select('id, profile_id')
@@ -447,7 +445,7 @@ class DriverRepository {
         }
       }
 
-      // 2. If no bus-specific parents found, fallback to all parents in the organization
+      // Step 2: fallback — all parents in the org if none found via bus
       if (recipientProfileIds.isEmpty) {
         try {
           final parentsRes = await SupabaseService.client
@@ -456,47 +454,38 @@ class DriverRepository {
               .eq('organization_id', organizationId);
 
           for (final p in (parentsRes as List)) {
-            final pid = p['profile_id'] as String? ?? p['id'] as String?;
+            final pid = p['profile_id'] as String?;
             if (pid != null && pid.isNotEmpty) {
               recipientProfileIds.add(pid);
             }
           }
         } catch (pErr) {
-          AppLogger.warning('Could not query parents in org $organizationId: $pErr', context: 'DriverRepository');
+          AppLogger.warning('Could not query org parents: $pErr', context: 'DriverRepository');
         }
       }
 
-      // 3. Batch insert deliveries for all identified parents
-      final deliveries = <Map<String, dynamic>>[];
-      for (final profileId in recipientProfileIds) {
-        deliveries.add({
-          'notification_event_id': eventId,
-          'organization_id': organizationId,
-          'recipient_profile_id': profileId,
-          'channel': 'PUSH',
-          'status': 'SENT',
-          'created_at': now,
-          'sent_at': now,
-        });
+      if (recipientProfileIds.isEmpty) {
+        AppLogger.warning('No parent recipients found for event $eventId', context: 'DriverRepository');
+        return;
       }
 
-      // Also add a general broadcast delivery
-      deliveries.add({
+      // Step 3: batch insert deliveries — one row per parent
+      // Schema columns: notification_event_id, organization_id, recipient_profile_id, channel, status
+      // recipient_profile_id is NOT NULL — no null/broadcast rows allowed
+      final deliveries = recipientProfileIds.map((profileId) => {
         'notification_event_id': eventId,
         'organization_id': organizationId,
-        'recipient_profile_id': null,
+        'recipient_profile_id': profileId,
         'channel': 'PUSH',
         'status': 'SENT',
-        'created_at': now,
-        'sent_at': now,
-      });
+      }).toList();
 
       await SupabaseService.client
           .from(AppConstants.tableNotificationDeliveries)
           .insert(deliveries);
 
       AppLogger.info(
-        'Dispatched ${deliveries.length} notification deliveries for event $eventId',
+        'Dispatched ${deliveries.length} deliveries for event $eventId (busId: $busId)',
         context: 'DriverRepository',
       );
     } catch (delErr) {

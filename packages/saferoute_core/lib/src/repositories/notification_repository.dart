@@ -95,7 +95,7 @@ class NotificationRepository {
       final deliveriesData = await _db
           .from('notification_deliveries')
           .select('*, notification_events(*)')
-          .or('recipient_profile_id.eq.$profileId,recipient_profile_id.is.null')
+          .eq('recipient_profile_id', profileId)
           .order('created_at', ascending: false)
           .limit(limit);
 
