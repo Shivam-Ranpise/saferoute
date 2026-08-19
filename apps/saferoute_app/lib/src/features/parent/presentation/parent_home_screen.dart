@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../notifications/providers/notification_providers.dart';
 import '../../notifications/providers/voice_settings_provider.dart';
@@ -259,6 +260,18 @@ class _ParentHomeScreenState extends ConsumerState<ParentHomeScreen> {
           ],
         ),
         actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.translate_rounded, color: Colors.white),
+            tooltip: 'Language / भाषा',
+            onSelected: (code) {
+              ref.read(appLocaleProvider.notifier).setLanguage(code);
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(value: 'en', child: Text('🇬🇧 English')),
+              PopupMenuItem(value: 'hi', child: Text('🇮🇳 हिंदी (Hindi)')),
+              PopupMenuItem(value: 'mr', child: Text('🇮🇳 मराठी (Marathi)')),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.record_voice_over_rounded, color: Colors.white),
             tooltip: 'Voice Alerts (TTS)',

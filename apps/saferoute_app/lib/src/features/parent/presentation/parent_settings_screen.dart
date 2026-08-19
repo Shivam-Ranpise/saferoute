@@ -69,12 +69,13 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(currentProfileProvider);
     final prefsAsync = ref.watch(notificationPreferencesProvider);
+    final loc = ref.watch(appLocalizationsProvider);
 
     prefsAsync.whenData(_initFromPreferences);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notification Preferences'),
+        title: Text(loc.notificationPreferences),
         backgroundColor: SafeRouteColors.deepNavy,
         actions: [
           TextButton(
@@ -165,69 +166,10 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
             const SizedBox(height: 24),
           ],
 
-          const Text(
-            'Delivery Channels',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: SafeRouteColors.deepNavy,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Choose how you would like to receive proximity and delay alerts for your children.',
-            style: TextStyle(
-              fontSize: 13,
-              color: SafeRouteColors.onSurfaceVariant,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Channel Toggles
-          Card(
-            margin: EdgeInsets.zero,
-            child: Column(
-              children: [
-                SwitchListTile(
-                  secondary: const Icon(Icons.notifications_active_outlined,
-                      color: SafeRouteColors.blue),
-                  title: const Text('In-App Push Notifications'),
-                  subtitle: const Text('Instant alerts on your device'),
-                  value: _pushEnabled,
-                  onChanged: (val) {
-                    setState(() => _pushEnabled = val);
-                  },
-                ),
-                const Divider(),
-                SwitchListTile(
-                  secondary: const Icon(Icons.chat_bubble_outline,
-                      color: SafeRouteColors.safetyGreen),
-                  title: const Text('WhatsApp Messages'),
-                  subtitle: const Text('Updates sent directly to your WhatsApp'),
-                  value: _whatsappEnabled,
-                  onChanged: (val) {
-                    setState(() => _whatsappEnabled = val);
-                  },
-                ),
-                const Divider(),
-                SwitchListTile(
-                  secondary: const Icon(Icons.sms_outlined,
-                      color: SafeRouteColors.orange),
-                  title: const Text('SMS Text Messages'),
-                  subtitle: const Text('Standard SMS message alerts'),
-                  value: _smsEnabled,
-                  onChanged: (val) {
-                    setState(() => _smsEnabled = val);
-                  },
-                ),
-              ],
-            ),
-          ),
           // App Language Selector Card
-          const Text(
-            'App & Voice Language',
-            style: TextStyle(
+          Text(
+            loc.languageTitle,
+            style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: SafeRouteColors.deepNavy,
@@ -252,17 +194,17 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                         child: const Icon(Icons.translate_rounded, color: SafeRouteColors.blue),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Language / भाषा',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              loc.languageTitle,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                             ),
                             Text(
-                              'Select preferred language for app and spoken alerts',
-                              style: TextStyle(fontSize: 12, color: SafeRouteColors.onSurfaceVariant),
+                              loc.languageSubtitle,
+                              style: const TextStyle(fontSize: 12, color: SafeRouteColors.onSurfaceVariant),
                             ),
                           ],
                         ),
@@ -287,6 +229,67 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+
+          Text(
+            loc.deliveryChannels,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: SafeRouteColors.deepNavy,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Choose how you would like to receive proximity and delay alerts for your children.',
+            style: const TextStyle(
+              fontSize: 13,
+              color: SafeRouteColors.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Channel Toggles
+          Card(
+            margin: EdgeInsets.zero,
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_active_outlined,
+                      color: SafeRouteColors.blue),
+                  title: Text(loc.pushNotifications),
+                  subtitle: Text(loc.pushSubtitle),
+                  value: _pushEnabled,
+                  onChanged: (val) {
+                    setState(() => _pushEnabled = val);
+                  },
+                ),
+                const Divider(),
+                SwitchListTile(
+                  secondary: const Icon(Icons.chat_bubble_outline,
+                      color: SafeRouteColors.safetyGreen),
+                  title: Text(loc.whatsappMessages),
+                  subtitle: Text(loc.whatsappSubtitle),
+                  value: _whatsappEnabled,
+                  onChanged: (val) {
+                    setState(() => _whatsappEnabled = val);
+                  },
+                ),
+                const Divider(),
+                SwitchListTile(
+                  secondary: const Icon(Icons.sms_outlined,
+                      color: SafeRouteColors.orange),
+                  title: Text(loc.smsMessages),
+                  subtitle: Text(loc.smsSubtitle),
+                  value: _smsEnabled,
+                  onChanged: (val) {
+                    setState(() => _smsEnabled = val);
+                  },
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
 
           // Spoken Voice Announcements Card Link
@@ -301,11 +304,11 @@ class _ParentSettingsScreenState extends ConsumerState<ParentSettingsScreen> {
                 ),
                 child: const Icon(Icons.record_voice_over_rounded, color: SafeRouteColors.deepNavy),
               ),
-              title: const Text(
-                'Voice & Speech Alerts (TTS)',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              title: Text(
+                loc.voiceSettingsTitle,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: const Text('Custom spoken announcements when bus arrives'),
+              subtitle: Text(loc.voiceSettingsSubtitle),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => context.push('/parent/voice-settings'),
             ),

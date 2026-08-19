@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../providers/locale_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../notifications/providers/voice_settings_provider.dart';
 import '../../notifications/services/app_voice_service.dart';
@@ -113,25 +112,6 @@ class VoiceSettingsScreen extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                       color: SafeRouteColors.deepNavy,
                     ),
-                  ),
-                  // Speech Language Selector
-                  const Text(
-                    'Voice Language / भाषा:',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  SegmentedButton<String>(
-                    segments: const [
-                      ButtonSegment(value: 'en', label: Text('English')),
-                      ButtonSegment(value: 'hi', label: Text('हिंदी')),
-                      ButtonSegment(value: 'mr', label: Text('मराठी')),
-                    ],
-                    selected: {ref.watch(appLocaleProvider).languageCode},
-                    onSelectionChanged: (newSet) {
-                      if (newSet.isNotEmpty) {
-                        ref.read(appLocaleProvider.notifier).setLanguage(newSet.first);
-                      }
-                    },
                   ),
                   const SizedBox(height: 16),
 
