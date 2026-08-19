@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import 'src/features/notifications/services/app_notification_service.dart';
@@ -88,6 +89,11 @@ class SafeRouteApp extends ConsumerWidget {
       routerConfig: router,
 
       // Multi-Language Support (English, Hindi, Marathi)
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       supportedLocales: const [
         Locale('en', 'IN'),
         Locale('hi', 'IN'),
