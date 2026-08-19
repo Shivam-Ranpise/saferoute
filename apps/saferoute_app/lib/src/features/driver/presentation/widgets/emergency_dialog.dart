@@ -174,7 +174,7 @@ class _EmergencyDialogState extends ConsumerState<EmergencyDialog> {
                 widget.isDelayMode
                     ? 'Notify parents instantly about delay timing:'
                     : 'Select emergency type to immediately alert all parents and school admins:',
-                style: const TextStyle(fontSize: 13, height: 1.4, color: SafeRouteColors.textSecondary),
+                style: const TextStyle(fontSize: 13, height: 1.4, color: SafeRouteColors.onSurfaceVariant),
               ),
               const SizedBox(height: 16),
 
@@ -201,7 +201,7 @@ class _EmergencyDialogState extends ConsumerState<EmergencyDialog> {
                       r,
                       style: TextStyle(
                         fontWeight: r == 'Other (Custom Reason)' ? FontWeight.bold : FontWeight.normal,
-                        color: r == 'Other (Custom Reason)' ? SafeRouteColors.blue : SafeRouteColors.textPrimary,
+                        color: r == 'Other (Custom Reason)' ? SafeRouteColors.blue : SafeRouteColors.onSurface,
                         fontSize: 13.5,
                       ),
                     ),
@@ -253,7 +253,7 @@ class _EmergencyDialogState extends ConsumerState<EmergencyDialog> {
                       selectedColor: const Color(0xFFD97706),
                       backgroundColor: Colors.grey.shade100,
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : SafeRouteColors.textPrimary,
+                        color: isSelected ? Colors.white : SafeRouteColors.onSurface,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         fontSize: 12,
                       ),
