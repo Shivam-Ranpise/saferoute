@@ -216,14 +216,7 @@ class AppNotificationHelper {
     required String message,
     DateTime? createdAt,
   }) async {
-    // If notification was created BEFORE app was launched, mark as seen and do not pop up historical items
-    if (createdAt != null && createdAt.isBefore(_appLaunchTime.subtract(const Duration(seconds: 10)))) {
-      _seenDeliveryIds.add(deliveryId);
-      return;
-    }
-
     if (_seenDeliveryIds.contains(deliveryId)) {
-      AppLogger.info('Notification deliveryId $deliveryId already popped up. Skipping duplicate.', context: 'AppNotificationHelper');
       return;
     }
     _seenDeliveryIds.add(deliveryId);
@@ -237,24 +230,22 @@ class AppNotificationHelper {
         channelDescription: 'System tray notifications for SafeRoute safety alerts and announcements',
         importance: Importance.max,
         priority: Priority.max,
-        ticker: 'SafeRoute Emergency Notification',
+        ticker: 'SafeRoute Notification',
         icon: '@mipmap/ic_launcher',
         playSound: true,
         enableVibration: true,
         visibility: NotificationVisibility.public,
-        fullScreenIntent: true,
-        category: AndroidNotificationCategory.alarm,
         styleInformation: BigTextStyleInformation(''),
       );
       const notificationDetails = NotificationDetails(android: androidDetails);
-      const notificationId = 1001; // Single clean notification tray slot
+      final notificationId = deliveryId.hashCode.abs() % 100000;
       await _localNotifs.show(
         notificationId,
         title,
         message,
         notificationDetails,
       );
-      AppLogger.info('SUCCESS: Local floating system banner popped up for deliveryId: $deliveryId', context: 'AppNotificationHelper');
+      AppLogger.info('SUCCESS: Local system banner popped up for deliveryId: $deliveryId (notifId: $notificationId)', context: 'AppNotificationHelper');
     } catch (e) {
       AppLogger.warning('Failed to show system tray notification: $e', context: 'AppNotificationHelper');
     }
