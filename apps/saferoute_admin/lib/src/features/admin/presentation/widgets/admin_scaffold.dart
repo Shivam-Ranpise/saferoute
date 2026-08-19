@@ -126,6 +126,13 @@ class AdminScaffold extends ConsumerWidget {
                   route: '/admin/notifications',
                   isSelected: currentPath == '/admin/notifications',
                 ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.data_usage_rounded,
+                  label: 'DB Usage Stats',
+                  route: '/admin/stats',
+                  isSelected: currentPath == '/admin/stats',
+                ),
                 // Super Admin-only: Organizations
                 if (profile?.role == UserRole.superAdmin) ...[
                   const Padding(

@@ -10,6 +10,7 @@ import '../features/admin/presentation/notification_audit_screen.dart';
 import '../features/admin/presentation/organization_settings_screen.dart';
 import '../features/admin/presentation/parents_management_screen.dart';
 import '../features/admin/presentation/super_admin_dashboard_screen.dart';
+import '../features/admin/presentation/db_usage_stats_screen.dart';
 import '../features/auth/presentation/admin_login_screen.dart';
 import '../providers/auth_provider.dart';
 
@@ -86,6 +87,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/admin/settings',
             builder: (context, state) => const OrganizationSettingsScreen(),
+          ),
+          GoRoute(
+            path: '/admin/stats',
+            builder: (context, state) => const DbUsageStatsScreen(),
           ),
         ],
       ),
