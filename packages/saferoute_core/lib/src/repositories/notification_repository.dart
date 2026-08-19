@@ -118,85 +118,34 @@ class NotificationRepository {
     }
   }
 
-  /// Watches notifications in real time for a user profile with periodic REST polling backup
-  Stream<List<NotificationItem>> watchNotificationsForRecipient(
-      String profileId) {
+  /// Watches notifications in real time for a user profile with periodic REST polling
+  Stream<List<NotificationItem>> watchNotificationsForRecipient(String profileId) {
     late StreamController<List<NotificationItem>> controller;
-    StreamSubscription<List<NotificationItem>>? subscription;
     Timer? pollTimer;
+
+    Future<void> fetchAndEmit() async {
+      if (controller.isClosed) return;
+      try {
+        final items = await getNotificationsForRecipient(profileId);
+        if (!controller.isClosed) controller.add(items);
+      } catch (e) {
+        AppLogger.warning('REST poll error: $e', context: 'NotificationRepository');
+      }
+    }
 
     controller = StreamController<List<NotificationItem>>(
       onListen: () {
         AppLogger.info('Started watching notifications for profileId: $profileId', context: 'NotificationRepository');
-        
-        // Initial REST fetch so UI loads immediately
-        getNotificationsForRecipient(profileId).then((items) {
-          if (!controller.isClosed) controller.add(items);
-        }).catchError((e) {
-          AppLogger.warning('Initial REST fetch error: $e', context: 'NotificationRepository');
-        });
 
-        // Periodic REST polling every 3 seconds as fail-safe
-        pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-          if (controller.isClosed) return;
-          try {
-            final items = await getNotificationsForRecipient(profileId);
-            if (!controller.isClosed) controller.add(items);
-          } catch (e) {
-            AppLogger.warning('Polling REST error: $e', context: 'NotificationRepository');
-          }
-        });
+        // Immediate first fetch so UI loads instantly
+        fetchAndEmit();
 
-        try {
-          subscription = _db
-              .from('notification_deliveries')
-              .stream(primaryKey: ['id'])
-              .order('created_at', ascending: false)
-              .asyncMap((list) async {
-                final List<NotificationItem> items = [];
-                for (final row in list) {
-                  final delivery = NotificationDelivery.fromJson(row);
-                  // Include: deliveries targeted at this profile, OR broadcast deliveries (null recipient)
-                  final isForMe = delivery.recipientProfileId == null ||
-                      delivery.recipientProfileId == profileId;
-                  if (!isForMe) {
-                    continue;
-                  }
-                  NotificationEvent? event;
-                  try {
-                    final eventRow = await _db
-                        .from('notification_events')
-                        .select()
-                        .eq('id', delivery.notificationEventId)
-                        .maybeSingle();
-                    if (eventRow != null) {
-                      event = NotificationEvent.fromJson(eventRow);
-                    }
-                  } catch (e) {
-                    AppLogger.warning('Error fetching event row: $e', context: 'NotificationRepository');
-                  }
-                  items.add(NotificationItem(delivery: delivery, event: event));
-                }
-                return items;
-              })
-              .listen(
-                (items) {
-                  AppLogger.info('Realtime stream received ${items.length} notifications', context: 'NotificationRepository');
-                  if (!controller.isClosed) controller.add(items);
-                },
-                onError: (err) async {
-                  AppLogger.warning('Realtime notification stream error, relying on REST polling: $err',
-                      context: 'NotificationRepository');
-                },
-              );
-        } catch (e) {
-          AppLogger.warning('Error setting up stream subscription: $e', context: 'NotificationRepository');
-        }
+        // Poll every 3 seconds for near-realtime updates
+        pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => fetchAndEmit());
       },
       onCancel: () {
         AppLogger.info('Stopped watching notifications for profileId: $profileId', context: 'NotificationRepository');
         pollTimer?.cancel();
-        subscription?.cancel();
       },
     );
 
