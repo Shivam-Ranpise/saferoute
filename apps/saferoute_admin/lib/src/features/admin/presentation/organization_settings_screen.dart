@@ -356,8 +356,11 @@ class _OrganizationSettingsScreenState
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,9 +382,10 @@ class _OrganizationSettingsScreenState
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AdminColors.deepNavy,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                     icon: const Icon(Icons.map_rounded, size: 16),
-                    label: const Text('Pick Location on OpenStreetMap'),
+                    label: const Text('Pick Location on OpenStreetMap', style: TextStyle(fontWeight: FontWeight.bold)),
                     onPressed: () async {
                       final result = await showDialog<Map<String, double>>(
                         context: context,
@@ -438,10 +442,14 @@ class _OrganizationSettingsScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
                 children: [
                   const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.calendar_month_rounded, color: AdminColors.deepNavy, size: 24),
                       SizedBox(width: 10),
@@ -449,12 +457,12 @@ class _OrganizationSettingsScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Weekly School Operating Schedule Table',
+                            'Weekly Operating Schedule',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Configure specific start and end times for each day of the week (e.g. Mon-Fri 10-5, Saturday 7-11 morning)',
+                            'Configure specific start and end times for each day',
                             style: TextStyle(fontSize: 12, color: AdminColors.textSecondary),
                           ),
                         ],
@@ -463,6 +471,7 @@ class _OrganizationSettingsScreenState
                   ),
                   Wrap(
                     spacing: 8,
+                    runSpacing: 8,
                     children: [
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
