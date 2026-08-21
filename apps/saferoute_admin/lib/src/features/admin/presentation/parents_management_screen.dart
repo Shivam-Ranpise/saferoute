@@ -341,11 +341,15 @@ class _ParentsManagementScreenState
             children: [
               Icon(Icons.person_add_alt_1_rounded, color: AdminColors.deepNavy),
               SizedBox(width: 10),
-              Text(
-                'Register Parent Account',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AdminColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Register Parent',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AdminColors.textPrimary,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -548,11 +552,15 @@ class _ParentsManagementScreenState
             children: [
               Icon(Icons.edit_rounded, color: AdminColors.deepNavy),
               SizedBox(width: 10),
-              Text(
-                'Edit Parent Details',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AdminColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Edit Parent Details',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AdminColors.textPrimary,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

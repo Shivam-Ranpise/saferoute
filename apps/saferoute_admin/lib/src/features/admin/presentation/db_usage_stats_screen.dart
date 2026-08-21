@@ -292,75 +292,78 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
 
             const SizedBox(height: 20),
 
-            // Grid of Table Metrics
+            // Grid of Table Metrics (2 columns in mobile view)
             LayoutBuilder(
               builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth > 900
-                    ? 3
-                    : constraints.maxWidth > 550
-                        ? 2
-                        : 1;
-                final childAspect = constraints.maxWidth < 420 ? 2.5 : 2.2;
+                final isNarrow = constraints.maxWidth < 750;
+                final crossAxisCount = constraints.maxWidth > 900 ? 3 : 2;
+                final childAspect = isNarrow ? 1.35 : 2.2;
                 return GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
+                  crossAxisSpacing: isNarrow ? 10 : 14,
+                  mainAxisSpacing: isNarrow ? 10 : 14,
                   childAspectRatio: childAspect,
                   children: [
                     _buildStatCard(
-                      title: 'Organizations (Schools)',
+                      title: 'Organizations',
                       count: _orgsCount,
                       icon: Icons.corporate_fare_rounded,
                       color: const Color(0xFF2563EB),
-                      subtitle: 'Active tenant schools',
+                      subtitle: 'Active schools',
+                      isMobile: isNarrow,
                     ),
                     _buildStatCard(
                       title: 'User Profiles',
                       count: _profilesCount,
                       icon: Icons.people_alt_rounded,
-                      color: const Color(0xFF8B5CF6), // Purple
-                      subtitle: 'Parents, drivers, and admins',
+                      color: const Color(0xFF8B5CF6),
+                      subtitle: 'Parents & crew',
+                      isMobile: isNarrow,
                     ),
                     _buildStatCard(
-                      title: 'Students Registered',
+                      title: 'Students',
                       count: _studentsCount,
                       icon: Icons.child_care_rounded,
-                      color: const Color(0xFFEC4899), // Pink
-                      subtitle: 'Tracked school children',
+                      color: const Color(0xFFEC4899),
+                      subtitle: 'Tracked children',
+                      isMobile: isNarrow,
                     ),
                     _buildStatCard(
                       title: 'School Buses',
                       count: _busesCount,
                       icon: Icons.directions_bus_rounded,
                       color: AdminColors.yellow,
-                      subtitle: 'Active fleet vehicles',
+                      subtitle: 'Fleet vehicles',
+                      isMobile: isNarrow,
                     ),
                     _buildStatCard(
                       title: 'Notification Events',
                       count: _eventsCount,
                       icon: Icons.notifications_active_rounded,
-                      color: const Color(0xFFF97316), // Orange
-                      subtitle: 'Logged alert triggers',
+                      color: const Color(0xFFF97316),
+                      subtitle: 'Alert triggers',
+                      isMobile: isNarrow,
                     ),
                     _buildStatCard(
-                      title: 'Notification Deliveries',
+                      title: 'Deliveries',
                       count: _deliveriesCount,
                       icon: Icons.mark_email_read_rounded,
                       color: AdminColors.safetyGreen,
-                      subtitle: 'Dispatched push & SMS logs',
+                      subtitle: 'Dispatched logs',
+                      isMobile: isNarrow,
                     ),
                   ],
                 );
               },
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Supabase Free Tier Allocation Breakdown Card
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isMobile ? 16 : 20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
@@ -380,12 +383,14 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
                         child: const Icon(Icons.bolt_rounded, color: Color(0xFF3ECF8E), size: 20),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        'Supabase Free Tier Limits & Resource Allocation',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AdminColors.textPrimary,
+                      Expanded(
+                        child: Text(
+                          'Supabase Free Tier Limits & Allocation',
+                          style: TextStyle(
+                            fontSize: isMobile ? 14 : 16,
+                            fontWeight: FontWeight.bold,
+                            color: AdminColors.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -426,11 +431,11 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Database Tables & Records DataTable
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isMobile ? 16 : 20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
@@ -439,16 +444,18 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.table_chart_rounded, color: AdminColors.deepNavy, size: 20),
-                      SizedBox(width: 10),
-                      Text(
-                        'Database Schema & Table Breakdown Table',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AdminColors.textPrimary,
+                      const Icon(Icons.table_chart_rounded, color: AdminColors.deepNavy, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Database Schema & Table Breakdown',
+                          style: TextStyle(
+                            fontSize: isMobile ? 14 : 16,
+                            fontWeight: FontWeight.bold,
+                            color: AdminColors.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -490,9 +497,9 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isMobile ? 16 : 20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
@@ -501,10 +508,10 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Infrastructure & Connection Details',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                       fontWeight: FontWeight.bold,
                       color: AdminColors.textPrimary,
                     ),
@@ -534,59 +541,118 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
     required IconData icon,
     required Color color,
     required String subtitle,
+    bool isMobile = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AdminColors.border),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
+      child: isMobile
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AdminColors.textSecondary,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(icon, color: color, size: 18),
+                    ),
+                    Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AdminColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '$count',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AdminColors.textPrimary,
-                  ),
+                const SizedBox(height: 4),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AdminColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: Colors.grey.shade600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
+              ],
+            )
+          : Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AdminColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$count',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AdminColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
