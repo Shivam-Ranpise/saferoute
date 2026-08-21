@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import '../../../../theme/admin_theme.dart';
 import '../../../../providers/auth_provider.dart';
+import '../../providers/admin_providers.dart';
 
 class AdminScaffold extends ConsumerWidget {
   final Widget child;
@@ -14,6 +15,34 @@ class AdminScaffold extends ConsumerWidget {
     required this.child,
     required this.currentPath,
   });
+
+  Future<void> _handleGlobalRefresh(BuildContext context, WidgetRef ref) async {
+    ref.invalidate(adminBusesProvider);
+    ref.invalidate(adminDriversProvider);
+    ref.invalidate(adminStudentsProvider);
+    ref.invalidate(adminParentsProvider);
+    ref.invalidate(currentOrganizationProvider);
+    ref.invalidate(organizationStatsProvider);
+    ref.invalidate(notificationAuditLogsProvider);
+    ref.invalidate(currentAdminProfileProvider);
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: AdminColors.safetyGreen, size: 16),
+            SizedBox(width: 8),
+            Text('Dashboard data refreshed'),
+          ],
+        ),
+        duration: Duration(milliseconds: 1200),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Color(0xFF1E293B),
+      ),
+    );
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -307,6 +336,11 @@ class AdminScaffold extends ConsumerWidget {
           ),
           actions: [
             IconButton(
+              icon: const Icon(Icons.refresh_rounded, color: AdminColors.yellow, size: 22),
+              tooltip: 'Reload Data',
+              onPressed: () => _handleGlobalRefresh(context, ref),
+            ),
+            IconButton(
               icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 20),
               tooltip: 'Sign Out',
               onPressed: () {
@@ -321,7 +355,13 @@ class AdminScaffold extends ConsumerWidget {
             child: sidebarContent,
           ),
         ),
-        body: child,
+        body: RefreshIndicator(
+          color: AdminColors.yellow,
+          backgroundColor: const Color(0xFF0F172A),
+          displacement: 20,
+          onRefresh: () => _handleGlobalRefresh(context, ref),
+          child: child,
+        ),
       );
     }
 
