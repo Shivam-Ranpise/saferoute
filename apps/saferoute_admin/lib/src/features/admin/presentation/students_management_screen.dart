@@ -47,11 +47,15 @@ class _StudentsManagementScreenState
                 children: [
                   const Icon(Icons.school_rounded, color: AdminColors.deepNavy),
                   const SizedBox(width: 10),
-                  Text(
-                    isEditing ? 'Edit Student' : 'Register Student to Roster',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AdminColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      isEditing ? 'Edit Student' : 'Register Student',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AdminColors.textPrimary,
+                        fontSize: 18,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -143,24 +147,13 @@ class _StudentsManagementScreenState
                       ),
                       const SizedBox(height: 14),
 
-                      // Designated Stop Name
-                      TextField(
-                        controller: stopNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Designated Stop Name',
-                          prefixIcon: Icon(Icons.location_on_outlined),
-                          hintText: 'e.g. Indiranagar Club Stop',
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
                       // Pickup Address
                       TextField(
                         controller: addressController,
                         decoration: const InputDecoration(
-                          labelText: 'Pickup Address',
+                          labelText: 'Pickup / Drop Address (Optional)',
                           prefixIcon: Icon(Icons.home_outlined),
-                          hintText: 'e.g. 100ft Rd, Indiranagar, Bangalore',
+                          hintText: 'e.g. 100ft Rd, Indiranagar',
                         ),
                       ),
                     ],
@@ -182,7 +175,6 @@ class _StudentsManagementScreenState
                   ),
                   onPressed: () async {
                     final name = nameController.text.trim();
-                    final stopName = stopNameController.text.trim();
                     final address = addressController.text.trim();
 
                     if (name.isEmpty) return;
@@ -192,7 +184,7 @@ class _StudentsManagementScreenState
                       organizationId: orgId,
                       parentId: selectedParentId,
                       name: name,
-                      pickupName: stopName.isNotEmpty ? stopName : null,
+                      pickupName: address.isNotEmpty ? address : 'Home Stop',
                       pickupAddress: address.isNotEmpty ? address : null,
                       pickupLatitude:
                           existingStudent?.pickupLatitude ?? 12.9716,

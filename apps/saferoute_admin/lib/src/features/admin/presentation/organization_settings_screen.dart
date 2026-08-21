@@ -268,6 +268,8 @@ class _OrganizationSettingsScreenState
                   ),
                   child: TabBar(
                     controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     indicatorColor: AdminColors.deepNavy,
                     indicatorWeight: 3,
                     labelColor: AdminColors.deepNavy,
@@ -288,6 +290,7 @@ class _OrganizationSettingsScreenState
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
+                    physics: const NeverScrollableScrollPhysics(),
                     children: [
                       _buildIdentityTab(),
                       _buildOperatingHoursTab(),

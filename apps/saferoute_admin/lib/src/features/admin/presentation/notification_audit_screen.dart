@@ -450,13 +450,15 @@ class _NotificationAuditScreenState
               ),
               child: TabBar(
                 controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 indicatorColor: AdminColors.deepNavy,
                 labelColor: AdminColors.deepNavy,
                 unselectedLabelColor: AdminColors.textSecondary,
                 tabs: const [
                   Tab(
                     icon: Icon(Icons.send_rounded, size: 18),
-                    text: 'Send Custom Notification / Announcement',
+                    text: 'Send Announcement',
                   ),
                   Tab(
                     icon: Icon(Icons.tune_rounded, size: 18),
@@ -464,7 +466,7 @@ class _NotificationAuditScreenState
                   ),
                   Tab(
                     icon: Icon(Icons.receipt_long_rounded, size: 18),
-                    text: 'Live Delivery Logs & Audit Trail',
+                    text: 'Delivery Logs & Audit Trail',
                   ),
                 ],
               ),
@@ -476,6 +478,7 @@ class _NotificationAuditScreenState
             Expanded(
               child: TabBarView(
                 controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
                   // Tab 1: Custom Notification Form
                   _buildCustomBroadcastTab(orgAsync),
@@ -804,53 +807,243 @@ class _NotificationAuditScreenState
       data: (org) {
         if (org == null) return const Center(child: Text('No organization profile.'));
 
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 700;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(isMobile ? 16 : 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AdminColors.yellow.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.campaign_rounded, color: AdminColors.deepNavy, size: 28),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'School Announcement & Notification Dispatcher',
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 16 : 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AdminColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Broadcast instant updates, delay notices, or emergency alerts to all parents or individuals.',
+                                      style: TextStyle(
+                                        fontSize: isMobile ? 12 : 13,
+                                        color: AdminColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AdminColors.deepNavy,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.add_comment_rounded, size: 18),
+                              label: const Text(
+                                'Compose Custom Notice',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              onPressed: () => _showComposeNotificationDialog(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator(color: AdminColors.yellow)),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Widget _buildChannelRulesTab(AsyncValue<Organization?> orgAsync) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 700;
         return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  padding: EdgeInsets.all(isMobile ? 16 : 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 12,
+                        runSpacing: 12,
                         children: [
-                          Icon(Icons.campaign_rounded, color: AdminColors.deepNavy, size: 28),
-                          SizedBox(width: 14),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
+                              const Icon(Icons.hub_rounded, color: AdminColors.blue, size: 22),
+                              const SizedBox(width: 8),
                               Text(
-                                'School Announcement & Custom Notification Dispatcher',
+                                'Channel Configuration Table',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: isMobile ? 15 : 16,
                                   fontWeight: FontWeight.bold,
                                   color: AdminColors.textPrimary,
                                 ),
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Broadcast instant updates, trip delay notices, or emergency alerts to all parents or specific individuals.',
-                                style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
-                              ),
                             ],
+                          ),
+                          orgAsync.when(
+                            data: (org) {
+                              if (org == null) return const SizedBox.shrink();
+                              return ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AdminColors.deepNavy,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                icon: _savingRules
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.save_rounded, size: 16),
+                                label: const Text('Save Rules', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                onPressed: _savingRules ? null : () => _saveRules(org),
+                              );
+                            },
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
                           ),
                         ],
                       ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AdminColors.deepNavy,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Configure dispatch channels per event using the table below. Use the checkboxes to enable or disable channels.',
+                        style: TextStyle(fontSize: isMobile ? 12 : 13, color: AdminColors.textSecondary),
+                      ),
+                      const Divider(height: 28),
+
+                      // Modern DataTable with Checkboxes
+                      LayoutBuilder(
+                        builder: (context, constraints) => SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                            child: DataTable(
+                              columnSpacing: 24,
+                              horizontalMargin: 16,
+                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                              columns: const [
+                                DataColumn(label: Text('Event Trigger / Milestone', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('App Push (FCM)', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('WhatsApp Business', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('SMS Text', style: TextStyle(fontWeight: FontWeight.bold))),
+                                DataColumn(label: Text('Quick Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                              ],
+                              rows: [
+                                _buildEventDataTableRow(
+                                  title: '🚍 Bus Approaching Stop (<500m)',
+                                  description: 'Triggered when bus is within proximity of child stop',
+                                  push: _busApproachingPush,
+                                  whatsapp: _busApproachingWhatsapp,
+                                  sms: _busApproachingSms,
+                                  onPushChanged: (v) => setState(() => _busApproachingPush = v ?? false),
+                                  onWhatsappChanged: (v) => setState(() => _busApproachingWhatsapp = v ?? false),
+                                  onSmsChanged: (v) => setState(() => _busApproachingSms = v ?? false),
+                                  onToggleAll: (v) => setState(() {
+                                    _busApproachingPush = v;
+                                    _busApproachingWhatsapp = v;
+                                    _busApproachingSms = v;
+                                  }),
+                                ),
+                                _buildEventDataTableRow(
+                                  title: '✅ Student Boarded School Bus',
+                                  description: 'Sent when driver marks child as Boarded in manifest',
+                                  push: _studentBoardedPush,
+                                  whatsapp: _studentBoardedWhatsapp,
+                                  sms: _studentBoardedSms,
+                                  onPushChanged: (v) => setState(() => _studentBoardedPush = v ?? false),
+                                  onWhatsappChanged: (v) => setState(() => _studentBoardedWhatsapp = v ?? false),
+                                  onSmsChanged: (v) => setState(() => _studentBoardedSms = v ?? false),
+                                  onToggleAll: (v) => setState(() {
+                                    _studentBoardedPush = v;
+                                    _studentBoardedWhatsapp = v;
+                                    _studentBoardedSms = v;
+                                  }),
+                                ),
+                                _buildEventDataTableRow(
+                                  title: '🏠 Student Safely Dropped Off',
+                                  description: 'Sent when child reaches school or designated drop stop',
+                                  push: _studentDroppedPush,
+                                  whatsapp: _studentDroppedWhatsapp,
+                                  sms: _studentDroppedSms,
+                                  onPushChanged: (v) => setState(() => _studentDroppedPush = v ?? false),
+                                  onWhatsappChanged: (v) => setState(() => _studentDroppedWhatsapp = v ?? false),
+                                  onSmsChanged: (v) => setState(() => _studentDroppedSms = v ?? false),
+                                  onToggleAll: (v) => setState(() {
+                                    _studentDroppedPush = v;
+                                    _studentDroppedWhatsapp = v;
+                                    _studentDroppedSms = v;
+                                  }),
+                                ),
+                                _buildEventDataTableRow(
+                                  title: '🚨 Emergency SOS / Critical Route Delays',
+                                  description: 'High-priority alerts dispatched across all active channels',
+                                  push: _emergencyPush,
+                                  whatsapp: _emergencyWhatsapp,
+                                  sms: _emergencySms,
+                                  onPushChanged: (v) => setState(() => _emergencyPush = v ?? false),
+                                  onWhatsappChanged: (v) => setState(() => _emergencyWhatsapp = v ?? false),
+                                  onSmsChanged: (v) => setState(() => _emergencySms = v ?? false),
+                                  onToggleAll: (v) => setState(() {
+                                    _emergencyPush = v;
+                                    _emergencyWhatsapp = v;
+                                    _emergencySms = v;
+                                  }),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        icon: const Icon(Icons.add_comment_rounded, size: 18),
-                        label: const Text(
-                          'Compose Custom Notice',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        onPressed: () => _showComposeNotificationDialog(context),
                       ),
                     ],
                   ),
@@ -860,159 +1053,6 @@ class _NotificationAuditScreenState
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(color: AdminColors.yellow)),
-      error: (e, _) => Center(child: Text('Error: $e')),
-    );
-  }
-
-  Widget _buildChannelRulesTab(AsyncValue<Organization?> orgAsync) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      orgAsync.when(
-                        data: (org) {
-                          if (org == null) return const SizedBox.shrink();
-                          return ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AdminColors.deepNavy,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            icon: _savingRules
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.save_rounded, size: 16),
-                            label: const Text('Save Rules', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            onPressed: _savingRules ? null : () => _saveRules(org),
-                          );
-                        },
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                      const SizedBox(width: 14),
-                      const Icon(Icons.hub_rounded, color: AdminColors.blue, size: 22),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Automated Event Channel Configuration Table',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AdminColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Configure dispatch channels per event using the table below. Use the checkboxes to enable or disable channels.',
-                    style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
-                  ),
-                  const Divider(height: 28),
-
-                  // Modern DataTable with Checkboxes
-                  LayoutBuilder(
-                    builder: (context, constraints) => SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                        child: DataTable(
-                          columnSpacing: 24,
-                          horizontalMargin: 16,
-                          headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
-                          columns: const [
-                            DataColumn(label: Text('Event Trigger / Milestone', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('App Push (FCM)', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('WhatsApp Business', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('SMS Text', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Quick Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-                          ],
-                          rows: [
-                            _buildEventDataTableRow(
-                              title: '🚍 Bus Approaching Stop (<500m)',
-                              description: 'Triggered when bus is within proximity of child stop',
-                              push: _busApproachingPush,
-                              whatsapp: _busApproachingWhatsapp,
-                              sms: _busApproachingSms,
-                              onPushChanged: (v) => setState(() => _busApproachingPush = v ?? false),
-                              onWhatsappChanged: (v) => setState(() => _busApproachingWhatsapp = v ?? false),
-                              onSmsChanged: (v) => setState(() => _busApproachingSms = v ?? false),
-                              onToggleAll: (v) => setState(() {
-                                _busApproachingPush = v;
-                                _busApproachingWhatsapp = v;
-                                _busApproachingSms = v;
-                              }),
-                            ),
-                            _buildEventDataTableRow(
-                              title: '✅ Student Boarded School Bus',
-                              description: 'Sent when driver marks child as Boarded in manifest',
-                              push: _studentBoardedPush,
-                              whatsapp: _studentBoardedWhatsapp,
-                              sms: _studentBoardedSms,
-                              onPushChanged: (v) => setState(() => _studentBoardedPush = v ?? false),
-                              onWhatsappChanged: (v) => setState(() => _studentBoardedWhatsapp = v ?? false),
-                              onSmsChanged: (v) => setState(() => _studentBoardedSms = v ?? false),
-                              onToggleAll: (v) => setState(() {
-                                _studentBoardedPush = v;
-                                _studentBoardedWhatsapp = v;
-                                _studentBoardedSms = v;
-                              }),
-                            ),
-                            _buildEventDataTableRow(
-                              title: '🏠 Student Safely Dropped Off',
-                              description: 'Sent when child reaches school or designated drop stop',
-                              push: _studentDroppedPush,
-                              whatsapp: _studentDroppedWhatsapp,
-                              sms: _studentDroppedSms,
-                              onPushChanged: (v) => setState(() => _studentDroppedPush = v ?? false),
-                              onWhatsappChanged: (v) => setState(() => _studentDroppedWhatsapp = v ?? false),
-                              onSmsChanged: (v) => setState(() => _studentDroppedSms = v ?? false),
-                              onToggleAll: (v) => setState(() {
-                                _studentDroppedPush = v;
-                                _studentDroppedWhatsapp = v;
-                                _studentDroppedSms = v;
-                              }),
-                            ),
-                            _buildEventDataTableRow(
-                              title: '🚨 Emergency SOS / Critical Route Delays',
-                              description: 'High-priority alerts dispatched across all active channels',
-                              push: _emergencyPush,
-                              whatsapp: _emergencyWhatsapp,
-                              sms: _emergencySms,
-                              onPushChanged: (v) => setState(() => _emergencyPush = v ?? false),
-                              onWhatsappChanged: (v) => setState(() => _emergencyWhatsapp = v ?? false),
-                              onSmsChanged: (v) => setState(() => _emergencySms = v ?? false),
-                              onToggleAll: (v) => setState(() {
-                                _emergencyPush = v;
-                                _emergencyWhatsapp = v;
-                                _emergencySms = v;
-                              }),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

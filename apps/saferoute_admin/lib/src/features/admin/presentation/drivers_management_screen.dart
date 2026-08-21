@@ -335,11 +335,15 @@ class _DriversManagementScreenState
             children: [
               Icon(Icons.badge_rounded, color: AdminColors.deepNavy),
               SizedBox(width: 10),
-              Text(
-                'Register Bus Driver',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AdminColors.textPrimary,
+              Expanded(
+                child: Text(
+                  'Register Driver',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AdminColors.textPrimary,
+                    fontSize: 18,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -363,78 +367,35 @@ class _DriversManagementScreenState
                           (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: usernameCtrl,
-                            autocorrect: false,
-                            decoration: const InputDecoration(
-                              labelText: 'Username *',
-                              prefixIcon: Icon(Icons.alternate_email_rounded),
-                              hintText: 'e.g. driver_ramesh',
-                            ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Username required';
-                              }
-                              if (v.trim().length < 4) {
-                                return 'Min 4 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: licenseCtrl,
-                            decoration: const InputDecoration(
-                              labelText: 'License Number *',
-                              prefixIcon: Icon(Icons.card_membership_rounded),
-                              hintText: 'e.g. DL-0420110012345',
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? 'License is required'
-                                : null,
-                          ),
-                        ),
-                      ],
+                    TextFormField(
+                      controller: usernameCtrl,
+                      autocorrect: false,
+                      decoration: const InputDecoration(
+                        labelText: 'Username (for login) *',
+                        prefixIcon: Icon(Icons.alternate_email_rounded),
+                        hintText: 'e.g. driver_ramesh',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Username required';
+                        }
+                        if (v.trim().length < 4) {
+                          return 'Min 4 characters';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: phoneCtrl,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'Phone Number',
-                              prefixIcon: Icon(Icons.phone_rounded),
-                              hintText: '+919876543210',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: emailCtrl,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: 'Email Address *',
-                              prefixIcon: Icon(Icons.email_outlined),
-                              hintText: 'driver@school.edu',
-                            ),
-                            validator: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Email is required';
-                              }
-                              if (!v.contains('@')) return 'Invalid email';
-                              return null;
-                            },
-                          ),
-                        ),
-                      ],
+                    TextFormField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Mobile / Phone Number *',
+                        prefixIcon: Icon(Icons.phone_rounded),
+                        hintText: '+919876543210',
+                      ),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Mobile number is required' : null,
                     ),
                     const SizedBox(height: 14),
                     TextFormField(
@@ -488,9 +449,9 @@ class _DriversManagementScreenState
                             'p_username':
                                 usernameCtrl.text.trim().toLowerCase(),
                             'p_phone': phoneCtrl.text.trim(),
-                            'p_email': emailCtrl.text.trim().toLowerCase(),
+                            'p_email': '${usernameCtrl.text.trim().toLowerCase()}@saferoute.app',
                             'p_password': passCtrl.text,
-                            'p_license_number': licenseCtrl.text.trim(),
+                            'p_license_number': 'N/A',
                             'p_org_id': orgId,
                           },
                         );

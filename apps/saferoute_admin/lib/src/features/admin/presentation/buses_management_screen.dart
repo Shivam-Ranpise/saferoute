@@ -45,11 +45,15 @@ class _BusesManagementScreenState extends ConsumerState<BusesManagementScreen> {
                 children: [
                   const Icon(Icons.directions_bus_rounded, color: AdminColors.deepNavy),
                   const SizedBox(width: 10),
-                  Text(
-                    isEditing ? 'Edit Bus / Route' : 'Add New Bus to Fleet',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AdminColors.textPrimary,
+                  Expanded(
+                    child: Text(
+                      isEditing ? 'Edit Bus / Route' : 'Add New Bus',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AdminColors.textPrimary,
+                        fontSize: 18,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -63,18 +67,18 @@ class _BusesManagementScreenState extends ConsumerState<BusesManagementScreen> {
                       TextField(
                         controller: numberController,
                         decoration: const InputDecoration(
-                          labelText: 'Bus Number / Route Name *',
+                          labelText: 'Route Name *',
                           prefixIcon: Icon(Icons.route_rounded),
-                          hintText: 'e.g. Bus 12-A (North Route)',
+                          hintText: 'e.g. North Route 12-A',
                         ),
                       ),
                       const SizedBox(height: 14),
                       TextField(
                         controller: regController,
                         decoration: const InputDecoration(
-                          labelText: 'Registration / Plate Number *',
+                          labelText: 'Number Plate *',
                           prefixIcon: Icon(Icons.card_membership_rounded),
-                          hintText: 'e.g. KA-01-AB-1234',
+                          hintText: 'e.g. MH-09-AB-1234',
                         ),
                       ),
                       const SizedBox(height: 14),

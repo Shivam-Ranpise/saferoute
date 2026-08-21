@@ -148,11 +148,11 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Total Rows Metric Header Card
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(isMobile ? 16 : 24),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
@@ -168,85 +168,146 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AdminColors.yellow.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.storage_rounded,
-                      color: AdminColors.yellow,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
+              child: isMobile
+                  ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AdminColors.yellow.withValues(alpha: 0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.storage_rounded,
+                                color: AdminColors.yellow,
+                                size: 24,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AdminColors.safetyGreen.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AdminColors.safetyGreen),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_rounded, color: AdminColors.safetyGreen, size: 14),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'DB: Healthy',
+                                    style: TextStyle(
+                                      color: AdminColors.safetyGreen,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
                         const Text(
                           'Total Database Records Logged',
-                          style: TextStyle(fontSize: 13, color: Colors.white70),
+                          style: TextStyle(fontSize: 12, color: Colors.white70),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           '$totalRows Records',
                           style: const TextStyle(
-                            fontSize: 28,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AdminColors.safetyGreen.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AdminColors.safetyGreen),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+                    )
+                  : Row(
                       children: [
-                        Icon(Icons.check_circle_rounded, color: AdminColors.safetyGreen, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'DB Status: Healthy',
-                          style: TextStyle(
-                            color: AdminColors.safetyGreen,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AdminColors.yellow.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.storage_rounded,
+                            color: AdminColors.yellow,
+                            size: 32,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Total Database Records Logged',
+                                style: TextStyle(fontSize: 13, color: Colors.white70),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$totalRows Records',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AdminColors.safetyGreen.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AdminColors.safetyGreen),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: AdminColors.safetyGreen, size: 16),
+                              SizedBox(width: 6),
+                              Text(
+                                'DB Status: Healthy',
+                                style: TextStyle(
+                                  color: AdminColors.safetyGreen,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Grid of Table Metrics
             LayoutBuilder(
               builder: (context, constraints) {
                 final crossAxisCount = constraints.maxWidth > 900
                     ? 3
-                    : constraints.maxWidth > 600
+                    : constraints.maxWidth > 550
                         ? 2
                         : 1;
+                final childAspect = constraints.maxWidth < 420 ? 2.5 : 2.2;
                 return GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 2.2,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: childAspect,
                   children: [
                     _buildStatCard(
                       title: 'Organizations (Schools)',
@@ -530,8 +591,11 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 4,
       children: [
         Text(
           label,
@@ -562,8 +626,11 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 4,
           children: [
             Text(
               title,
@@ -574,6 +641,7 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
               ),
             ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   usedText,
