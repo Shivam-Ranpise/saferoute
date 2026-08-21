@@ -197,7 +197,21 @@ class DriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>> {
     );
 
     _gpsSubscription = stream.listen((position) {
-      // 1. Update live trip location in trips table
+      // 1. Update local state immediately for instant Driver UI map responsiveness
+      final current = state.value;
+      if (current != null) {
+        state = AsyncValue.data(
+          current.copyWith(
+            currentLatitude: position.latitude,
+            currentLongitude: position.longitude,
+            currentSpeed: position.speed > 0 ? (position.speed * 3.6) : 0,
+            currentHeading: position.heading,
+            lastLocationAt: DateTime.now(),
+          ),
+        );
+      }
+
+      // 2. Update live trip location in trips table
       _repository.updateTripLocation(
         tripId: tripId,
         latitude: position.latitude,
@@ -207,7 +221,7 @@ class DriverActiveTripNotifier extends StateNotifier<AsyncValue<Trip?>> {
         accuracy: position.accuracy,
       );
 
-      // 2. Record breadcrumb in trip_location_history
+      // 3. Record breadcrumb in trip_location_history
       _repository.recordLocationHistory(
         tripId: tripId,
         latitude: position.latitude,

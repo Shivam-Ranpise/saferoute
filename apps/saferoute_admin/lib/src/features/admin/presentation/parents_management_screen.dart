@@ -20,46 +20,49 @@ class _ParentsManagementScreenState
   Widget build(BuildContext context) {
     final parentsAsync = ref.watch(adminParentsProvider);
     final orgId = ref.watch(currentAdminOrgIdProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       backgroundColor: AdminColors.background,
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 14 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Bar
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Parents & Guardians Directory',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AdminColors.textPrimary,
-                        ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Parents & Guardians Directory',
+                      style: TextStyle(
+                        fontSize: isMobile ? 18 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: AdminColors.textPrimary,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Registered parents, contact credentials, and linked student accounts',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AdminColors.textSecondary,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Registered parents, contact credentials, and linked student accounts',
+                      style: TextStyle(
+                        fontSize: isMobile ? 11.5 : 13,
+                        color: AdminColors.textSecondary,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AdminColors.deepNavy,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 14 : 20, vertical: isMobile ? 10 : 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),

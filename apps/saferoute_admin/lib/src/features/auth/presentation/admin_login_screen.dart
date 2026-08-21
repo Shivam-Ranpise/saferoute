@@ -40,9 +40,10 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
       backgroundColor: AdminColors.sidebarBg,
       body: Center(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Container(
-            width: 420,
-            padding: const EdgeInsets.all(36),
+            constraints: const BoxConstraints(maxWidth: 420),
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),

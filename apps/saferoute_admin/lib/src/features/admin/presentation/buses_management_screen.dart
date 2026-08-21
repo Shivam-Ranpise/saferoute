@@ -207,47 +207,49 @@ class _BusesManagementScreenState extends ConsumerState<BusesManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final busesAsync = ref.watch(adminBusesProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       backgroundColor: AdminColors.background,
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 14 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bus Fleet Management',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AdminColors.textPrimary,
-                        ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bus Fleet Management',
+                      style: TextStyle(
+                        fontSize: isMobile ? 18 : 22,
+                        fontWeight: FontWeight.bold,
+                        color: AdminColors.textPrimary,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Register, configure, and assign school transport vehicles',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AdminColors.textSecondary,
-                        ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Register, configure, and assign school transport vehicles',
+                      style: TextStyle(
+                        fontSize: isMobile ? 11.5 : 13,
+                        color: AdminColors.textSecondary,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AdminColors.deepNavy,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 14 : 20, vertical: isMobile ? 10 : 14),
                   ),
                   icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text(

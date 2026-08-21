@@ -15,14 +15,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp();
-    final notif = message.notification;
-    if (notif != null) {
-      await AppNotificationHelper.showSystemNotification(
-        deliveryId: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        title: notif.title ?? 'SafeRoute Alert',
-        message: notif.body ?? '',
-      );
-    }
   } catch (_) {}
 }
 

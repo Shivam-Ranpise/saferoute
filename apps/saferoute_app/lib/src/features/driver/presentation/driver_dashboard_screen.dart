@@ -591,8 +591,11 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                       ),
                     ] else ...[
                       // Active Trip Status & Controls
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -604,6 +607,7 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 CircleAvatar(
                                   radius: 4,
@@ -628,28 +632,34 @@ class _DriverDashboardScreenState extends ConsumerState<DriverDashboardScreen> {
                             ),
                           ),
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               TextButton.icon(
                                 style: TextButton.styleFrom(
                                   foregroundColor: const Color(0xFFD97706),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                icon: const Icon(Icons.timer_outlined, size: 16),
+                                icon: const Icon(Icons.timer_outlined, size: 15),
                                 label: Text(
                                   loc.delayButton,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
                                 ),
                                 onPressed: _showDelayDialog,
                               ),
+                              const SizedBox(width: 4),
                               TextButton.icon(
                                 style: TextButton.styleFrom(
                                   foregroundColor: SafeRouteColors.error,
-                                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                icon: const Icon(Icons.warning_rounded, size: 16),
+                                icon: const Icon(Icons.warning_rounded, size: 15),
                                 label: Text(
                                   loc.sosButton,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
                                 ),
                                 onPressed: _showEmergencyDialog,
                               ),

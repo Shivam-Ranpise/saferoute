@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saferoute_core/saferoute_core.dart';
 import '../../../providers/auth_provider.dart';
@@ -75,6 +77,77 @@ final selectedChildDriverProfileProvider =
   return await tripRepo.getDriverProfile(trip.driverId);
 });
 
+/// Destination Arrival and Auto-Stop Tracking State
+class DestinationArrivalState {
+  final bool isArrived;
+  final int secondsRemaining;
+  final bool isTrackingStopped;
+
+  const DestinationArrivalState({
+    this.isArrived = false,
+    this.secondsRemaining = 10,
+    this.isTrackingStopped = false,
+  });
+}
+
+class DestinationArrivalNotifier extends StateNotifier<DestinationArrivalState> {
+  Timer? _timer;
+  String? _currentTripId;
+
+  DestinationArrivalNotifier() : super(const DestinationArrivalState());
+
+  void checkDistance(double distanceMeters, String tripId) {
+    if (_currentTripId != tripId) {
+      _currentTripId = tripId;
+      _timer?.cancel();
+      state = const DestinationArrivalState();
+    }
+
+    // Destination reached within 1-5 meters (using 5m threshold)
+    if (distanceMeters <= 5.0 && !state.isArrived && !state.isTrackingStopped) {
+      state = const DestinationArrivalState(
+        isArrived: true,
+        secondsRemaining: 10,
+        isTrackingStopped: false,
+      );
+
+      _timer?.cancel();
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (state.secondsRemaining > 1) {
+          state = DestinationArrivalState(
+            isArrived: true,
+            secondsRemaining: state.secondsRemaining - 1,
+            isTrackingStopped: false,
+          );
+        } else {
+          timer.cancel();
+          state = const DestinationArrivalState(
+            isArrived: true,
+            secondsRemaining: 0,
+            isTrackingStopped: true,
+          );
+        }
+      });
+    }
+  }
+
+  void reset() {
+    _timer?.cancel();
+    state = const DestinationArrivalState();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+
+final destinationArrivalProvider =
+    StateNotifierProvider<DestinationArrivalNotifier, DestinationArrivalState>((ref) {
+  return DestinationArrivalNotifier();
+});
+
 /// Computed Bus Telemetry state for Parent UI
 class BusTelemetryState {
   final Trip? trip;
@@ -85,6 +158,9 @@ class BusTelemetryState {
   final bool isStale;
   final bool hasOngoingTrip;
   final bool hasLocation;
+  final bool isArrivedAtDestination;
+  final int arrivalCountdownSeconds;
+  final bool isTrackingStopped;
 
   const BusTelemetryState({
     this.trip,
@@ -95,6 +171,9 @@ class BusTelemetryState {
     required this.isStale,
     required this.hasOngoingTrip,
     required this.hasLocation,
+    this.isArrivedAtDestination = false,
+    this.arrivalCountdownSeconds = 10,
+    this.isTrackingStopped = false,
   });
 
   factory BusTelemetryState.idle() => const BusTelemetryState(
@@ -110,6 +189,7 @@ class BusTelemetryState {
 final busTelemetryProvider = Provider<BusTelemetryState>((ref) {
   final trip = ref.watch(selectedChildTripStreamProvider).value;
   final child = ref.watch(selectedChildProvider);
+  final arrivalState = ref.watch(destinationArrivalProvider);
 
   if (trip == null || !trip.isOngoing) {
     return BusTelemetryState.idle();
@@ -124,6 +204,9 @@ final busTelemetryProvider = Provider<BusTelemetryState>((ref) {
       isStale: trip.status == TripStatus.stale,
       hasOngoingTrip: true,
       hasLocation: hasLocation,
+      isArrivedAtDestination: arrivalState.isArrived,
+      arrivalCountdownSeconds: arrivalState.secondsRemaining,
+      isTrackingStopped: arrivalState.isTrackingStopped,
     );
   }
 
@@ -134,6 +217,11 @@ final busTelemetryProvider = Provider<BusTelemetryState>((ref) {
     lat2: child.pickupLatitude!,
     lon2: child.pickupLongitude!,
   );
+
+  // Trigger 10-second countdown when near destination (1-5 meters)
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    ref.read(destinationArrivalProvider.notifier).checkDistance(distanceMeters, trip.id);
+  });
 
   final threshold = child.notificationDistanceMeters.toDouble();
   const buffer = 200.0; // 200m buffer for approaching zone
@@ -170,6 +258,9 @@ final busTelemetryProvider = Provider<BusTelemetryState>((ref) {
     isStale: isStale,
     hasOngoingTrip: true,
     hasLocation: true,
+    isArrivedAtDestination: arrivalState.isArrived,
+    arrivalCountdownSeconds: arrivalState.secondsRemaining,
+    isTrackingStopped: arrivalState.isTrackingStopped,
   );
 });
 

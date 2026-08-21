@@ -97,7 +97,7 @@ class TripHudSheet extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // Distance & ETA Metric Display
-              if (telemetry.hasOngoingTrip) ...[
+              if (telemetry.hasOngoingTrip && !telemetry.isTrackingStopped) ...[
                 Row(
                   children: [
                     Expanded(

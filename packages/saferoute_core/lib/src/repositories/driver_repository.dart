@@ -117,10 +117,9 @@ class DriverRepository {
           context: 'DriverRepository');
       final trip = Trip.fromJson(response);
 
-      // Dynamically determine morning vs evening based on hour
+      // Dynamically determine morning vs evening based on school opening & closing schedule
       try {
-        final int currentHour = now.hour;
-        final bool isMorning = currentHour < 12;
+        final bool isMorning = await _isMorningRoute(organizationId);
 
         final String title = isMorning
             ? 'Morning Bus Route Started'
@@ -187,42 +186,36 @@ class DriverRepository {
 
       final trip = Trip.fromJson(response);
 
-      // If completing trip, log contextual arrival notification based on school schedule
+      // Morning only: Notify parents that bus arrived safely at school
       if (status == TripStatus.completed) {
-        try {
-          final int currentHour = now.hour;
-          final bool isMorning = currentHour < 12;
+        final bool isMorning = await _isMorningRoute(trip.organizationId);
 
-          final String title = isMorning
-              ? 'Bus Arrived at School'
-              : 'Evening Route Completed';
-          final String message = isMorning
-              ? 'The school bus has safely arrived at the school campus.'
-              : 'The school bus has safely completed its evening drop-off route.';
+        if (isMorning) {
+          try {
+            final driverProfileId = SupabaseService.client.auth.currentUser?.id;
+            final eventRes = await SupabaseService.client
+                .from(AppConstants.tableNotificationEvents)
+                .insert({
+                  'organization_id': trip.organizationId,
+                  'event_type': 'TRIP_COMPLETED',
+                  'title': 'Bus Arrived at School',
+                  'message': 'The school bus has safely arrived at the school campus.',
+                  'trip_id': tripId,
+                  'priority': 'NORMAL',
+                  if (driverProfileId != null) 'sender_profile_id': driverProfileId,
+                })
+                .select()
+                .single();
 
-          final driverProfileId = SupabaseService.client.auth.currentUser?.id;
-          final eventRes = await SupabaseService.client
-              .from(AppConstants.tableNotificationEvents)
-              .insert({
-                'organization_id': trip.organizationId,
-                'event_type': 'TRIP_COMPLETED',
-                'title': title,
-                'message': message,
-                'trip_id': tripId,
-                'priority': 'NORMAL', // DB enum: NORMAL | HIGH | EMERGENCY
-                if (driverProfileId != null) 'sender_profile_id': driverProfileId,
-              })
-              .select()
-              .single();
-
-          final eventId = eventRes['id'] as String;
-          await _dispatchDeliveriesForEvent(
-            organizationId: trip.organizationId,
-            eventId: eventId,
-            busId: trip.busId,
-          );
-        } catch (ne) {
-          AppLogger.warning('Failed to log TRIP_COMPLETED notification event: $ne');
+            final eventId = eventRes['id'] as String;
+            await _dispatchDeliveriesForEvent(
+              organizationId: trip.organizationId,
+              eventId: eventId,
+              busId: trip.busId,
+            );
+          } catch (ne) {
+            AppLogger.warning('Failed to log morning TRIP_COMPLETED notification event: $ne');
+          }
         }
       }
 
@@ -316,7 +309,6 @@ class DriverRepository {
             'title': title,
             'message': description,
             'trip_id': tripId,
-            if (targetChildId != null) 'child_id': targetChildId,
             'priority': isDelay ? 'NORMAL' : 'EMERGENCY',
             if (driverProfileId != null) 'sender_profile_id': driverProfileId,
             'created_at': now,
@@ -366,6 +358,8 @@ class DriverRepository {
     try {
       final Set<String> recipientProfileIds = {};
 
+      final currentDriverId = SupabaseService.client.auth.currentUser?.id;
+
       // Step 1: try finding parents whose children are on this bus
       if (busId != null && busId.isNotEmpty) {
         try {
@@ -388,7 +382,7 @@ class DriverRepository {
 
             for (final p in (parentsRes as List)) {
               final pid = p['profile_id'] as String?;
-              if (pid != null && pid.isNotEmpty) {
+              if (pid != null && pid.isNotEmpty && pid != currentDriverId) {
                 recipientProfileIds.add(pid);
               }
             }
@@ -408,7 +402,7 @@ class DriverRepository {
 
           for (final p in (parentsRes as List)) {
             final pid = p['profile_id'] as String?;
-            if (pid != null && pid.isNotEmpty) {
+            if (pid != null && pid.isNotEmpty && pid != currentDriverId) {
               recipientProfileIds.add(pid);
             }
           }
@@ -441,21 +435,54 @@ class DriverRepository {
         'Dispatched ${deliveries.length} deliveries for event $eventId (busId: $busId)',
         context: 'DriverRepository',
       );
-
-      // Trigger cloud push dispatch to FCM
-      try {
-        await SupabaseService.client.functions.invoke(
-          'dispatch-notification',
-          body: {'event_id': eventId},
-        );
-      } catch (fErr) {
-        AppLogger.info('Cloud push dispatch invoke notice: $fErr', context: 'DriverRepository');
-      }
     } catch (delErr) {
       AppLogger.warning(
         'Could not fan out deliveries for event $eventId: $delErr',
         context: 'DriverRepository',
       );
     }
+  }
+
+  /// Determines whether the current time corresponds to the Morning pickup route
+  /// vs Evening return route based on school opening and closing schedule in the organization.
+  Future<bool> _isMorningRoute(String organizationId) async {
+    try {
+      final orgRes = await SupabaseService.client
+          .from('organizations')
+          .select('api_parameters')
+          .eq('id', organizationId)
+          .maybeSingle();
+
+      final schedule = orgRes?['api_parameters']?['school_schedule'];
+      if (schedule != null && schedule is Map) {
+        final startTimeStr = schedule['start_time'] as String?;
+        final endTimeStr = schedule['end_time'] as String?;
+
+        if (startTimeStr != null && endTimeStr != null) {
+          final startParts = startTimeStr.split(':').map((s) => int.tryParse(s) ?? 0).toList();
+          final endParts = endTimeStr.split(':').map((s) => int.tryParse(s) ?? 0).toList();
+
+          final startMinutes = (startParts.isNotEmpty ? startParts[0] : 8) * 60 + (startParts.length > 1 ? startParts[1] : 0);
+          final endMinutes = (endParts.isNotEmpty ? endParts[0] : 17) * 60 + (endParts.length > 1 ? endParts[1] : 0);
+
+          // Midpoint between opening hours and closing hours
+          final midpoint = (startMinutes + endMinutes) / 2.0;
+          final now = DateTime.now();
+          final currentMinutes = now.hour * 60 + now.minute;
+
+          AppLogger.info(
+            'School Schedule -> Open: $startTimeStr, Close: $endTimeStr, Midpoint: ${midpoint / 60}h, Current: ${now.hour}:${now.minute} -> ${currentMinutes <= midpoint ? "MORNING" : "EVENING"}',
+            context: 'DriverRepository',
+          );
+
+          return currentMinutes <= midpoint;
+        }
+      }
+    } catch (e) {
+      AppLogger.warning('Error reading school schedule: $e', context: 'DriverRepository');
+    }
+
+    // Default fallback if no school schedule is configured
+    return DateTime.now().hour < 12;
   }
 }

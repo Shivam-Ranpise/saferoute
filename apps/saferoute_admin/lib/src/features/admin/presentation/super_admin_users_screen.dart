@@ -28,27 +28,29 @@ class SuperAdminUsersScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Action Bar
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'School Admin Accounts',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AdminColors.textPrimary,
-                      ),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'School Admin Accounts',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AdminColors.textPrimary,
                     ),
-                    Text(
-                      'Each school admin manages their own school\'s buses, drivers, parents and students.',
-                      style: TextStyle(
-                          fontSize: 12, color: AdminColors.textSecondary),
-                    ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    'Each school admin manages their own school\'s buses, drivers, parents and students.',
+                    style: TextStyle(
+                        fontSize: 12, color: AdminColors.textSecondary),
+                  ),
+                ],
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(

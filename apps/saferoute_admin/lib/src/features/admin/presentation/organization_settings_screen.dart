@@ -189,6 +189,7 @@ class _OrganizationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     final orgAsync = ref.watch(currentOrganizationProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       backgroundColor: AdminColors.background,
@@ -201,30 +202,33 @@ class _OrganizationSettingsScreenState
           _populateForm(org);
 
           return Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(isMobile ? 14 : 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Top Header Row with Title & Save Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '${org.name} — School Settings',
-                          style: const TextStyle(
-                            fontSize: 22,
+                          style: TextStyle(
+                            fontSize: isMobile ? 18 : 22,
                             fontWeight: FontWeight.bold,
                             color: AdminColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Configure daily operating hours, geofence radius, safety policies, and API keys',
+                        Text(
+                          'Configure daily operating hours, geofence, and API keys',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: isMobile ? 11.5 : 13,
                             color: AdminColors.textSecondary,
                           ),
                         ),
@@ -234,7 +238,8 @@ class _OrganizationSettingsScreenState
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AdminColors.deepNavy,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 16 : 22, vertical: isMobile ? 10 : 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

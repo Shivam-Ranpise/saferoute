@@ -79,20 +79,17 @@ class TripRepository {
         });
   }
 
-  /// Streams active trips for a specific bus.
-  Stream<Trip?> watchActiveTripForBus(String busId) {
-    return SupabaseService.client
-        .from(AppConstants.tableTrips)
-        .stream(primaryKey: ['id'])
-        .eq('bus_id', busId)
-        .map((records) {
-          if (records.isEmpty) return null;
-          final trips = records.map((r) => Trip.fromJson(r)).toList();
-          // Filter ongoing trips in stream mapper
-          final ongoing = trips.where((t) => t.isOngoing).toList();
-          if (ongoing.isNotEmpty) return ongoing.first;
-          return trips.isNotEmpty ? trips.first : null;
-        });
+  /// Streams active trips for a specific bus with real-time 2-second polling.
+  Stream<Trip?> watchActiveTripForBus(String busId) async* {
+    while (true) {
+      try {
+        final trip = await getActiveTripForBus(busId);
+        yield trip;
+      } catch (e) {
+        AppLogger.warning('Poll error for bus trip $busId: $e', context: 'TripRepository');
+      }
+      await Future.delayed(const Duration(seconds: 2));
+    }
   }
 
   /// Fetches bus info by ID.

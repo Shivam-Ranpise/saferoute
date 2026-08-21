@@ -305,6 +305,7 @@ class _NotificationAuditScreenState
   Widget build(BuildContext context) {
     final logsAsync = ref.watch(notificationAuditLogsProvider);
     final orgAsync = ref.watch(currentOrganizationProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     orgAsync.whenData((org) {
       if (org != null) _loadRulesFromOrg(org);
@@ -313,48 +314,53 @@ class _NotificationAuditScreenState
     return Scaffold(
       backgroundColor: AdminColors.background,
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 14 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Notification Center & Dispatch Rules',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: isMobile ? 18 : 22,
                         fontWeight: FontWeight.bold,
                         color: AdminColors.textPrimary,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Send custom announcements to parents, manage automated multi-channel rules, and audit live logs',
+                      'Send announcements, manage dispatch rules, and audit logs',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: isMobile ? 11.5 : 13,
                         color: AdminColors.textSecondary,
                       ),
                     ),
                   ],
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AdminColors.error,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 12 : 16, vertical: isMobile ? 8 : 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       icon: const Icon(Icons.delete_forever_rounded, size: 18),
-                      label: const Text('Delete Notification History'),
+                      label: const Text('Delete History'),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,

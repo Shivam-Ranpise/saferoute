@@ -32,20 +32,7 @@ final parentNotificationsProvider =
   return repo.watchNotificationsForRecipient(profile.id).map((items) {
     // Exclude user cleared/deleted notifications
     final visibleItems = items.where((i) => !clearedIds.contains(i.id)).toList();
-
     AppLogger.info('parentNotificationsProvider: Received ${visibleItems.length} visible notification items', context: 'NotificationStream');
-    for (final item in visibleItems) {
-      final isItemUnread = !readIds.contains(item.id) && item.isUnread;
-      AppLogger.info('Evaluating notification delivery ID: ${item.id} | title: "${item.title}" | isUnread: $isItemUnread', context: 'NotificationStream');
-      if (isItemUnread) {
-        AppNotificationHelper.showSystemNotification(
-          deliveryId: item.id,
-          title: item.title,
-          message: item.message,
-          createdAt: item.createdAt,
-        );
-      }
-    }
     return visibleItems;
   });
 });

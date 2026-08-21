@@ -98,32 +98,39 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
     }
 
     final totalRows = _orgsCount + _profilesCount + _studentsCount + _busesCount + _eventsCount + _deliveriesCount;
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       backgroundColor: AdminColors.background,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 14 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 12,
+              runSpacing: 12,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Database Health & Usage Statistics',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: isMobile ? 18 : 22,
                         fontWeight: FontWeight.bold,
                         color: AdminColors.textPrimary,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       'Real-time table record counts, system metrics, and storage performance',
-                      style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: isMobile ? 11.5 : 13,
+                        color: AdminColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -131,7 +138,8 @@ class _DbUsageStatsScreenState extends State<DbUsageStatsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AdminColors.deepNavy,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 14 : 16, vertical: isMobile ? 10 : 12),
                   ),
                   onPressed: _fetchStats,
                   icon: const Icon(Icons.refresh_rounded, size: 18),

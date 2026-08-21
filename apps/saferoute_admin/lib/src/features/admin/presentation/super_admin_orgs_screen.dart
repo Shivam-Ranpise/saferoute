@@ -28,27 +28,29 @@ class SuperAdminOrgsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Action Bar
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'School Organizations',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AdminColors.textPrimary,
-                      ),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'School Organizations',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AdminColors.textPrimary,
                     ),
-                    Text(
-                      'Each organization is a separate school with its own admin, drivers, and parents.',
-                      style: TextStyle(
-                          fontSize: 12, color: AdminColors.textSecondary),
-                    ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    'Each organization is a separate school with its own admin, drivers, and parents.',
+                    style: TextStyle(
+                        fontSize: 12, color: AdminColors.textSecondary),
+                  ),
+                ],
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
