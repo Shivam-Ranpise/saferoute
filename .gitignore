@@ -3,7 +3,9 @@
 # Flutter/Dart
 *.dart_tool/
 .dart_tool/
-build/
+apps/saferoute_app/build/
+packages/saferoute_core/build/
+**/android/build/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages

@@ -1,0 +1,14 @@
+<configuration>
+  <system.webServer>
+    <staticContent />
+    <rewrite>
+      <rules />
+    </rewrite>
+    <httpProtocol>
+      <customHeaders />
+    </httpProtocol>
+    <defaultDocument>
+      <files />
+    </defaultDocument>
+  </system.webServer>
+</configuration>
