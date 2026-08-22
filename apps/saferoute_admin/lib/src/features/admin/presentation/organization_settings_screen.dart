@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:html' as html;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saferoute_core/saferoute_core.dart';
@@ -802,6 +804,28 @@ class _OrganizationSettingsScreenState
   // ── Helper methods for Firebase Service Account JSON Upload & Parsing ──
   Future<void> _handleUploadJson() async {
     try {
+      if (kIsWeb) {
+        final uploadInput = html.FileUploadInputElement()
+          ..accept = '.json,application/json';
+        uploadInput.click();
+
+        uploadInput.onChange.listen((e) {
+          final files = uploadInput.files;
+          if (files != null && files.isNotEmpty) {
+            final file = files[0];
+            final reader = html.FileReader();
+            reader.onLoadEnd.listen((e) {
+              final text = reader.result as String?;
+              if (text != null && text.isNotEmpty) {
+                _parseAndApplyFcmJson(text);
+              }
+            });
+            reader.readAsText(file);
+          }
+        });
+        return;
+      }
+
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         withData: true,
@@ -813,13 +837,16 @@ class _OrganizationSettingsScreenState
         if (fileBytes != null) {
           final jsonString = utf8.decode(fileBytes);
           _parseAndApplyFcmJson(jsonString);
-        } else {
-          _showPasteJsonDialog();
         }
       }
     } catch (e) {
       if (mounted) {
-        _showPasteJsonDialog();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: AdminColors.error,
+          ),
+        );
       }
     }
   }
