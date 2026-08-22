@@ -324,7 +324,7 @@ class AdminRepository {
   }
 
   /// Updates organization safety settings and details
-  Future<Organization?> updateOrganization(Organization organization) async {
+  Future<Organization> updateOrganization(Organization organization) async {
     try {
       final res = await _db
           .from('organizations')
@@ -336,7 +336,7 @@ class AdminRepository {
     } catch (e) {
       AppLogger.error('Failed to update organization',
           error: e, context: 'AdminRepository');
-      return null;
+      rethrow;
     }
   }
 }
