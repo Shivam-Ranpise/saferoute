@@ -803,26 +803,23 @@ class _OrganizationSettingsScreenState
   Future<void> _handleUploadJson() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+        type: FileType.any,
         withData: true,
       );
 
       if (result != null && result.files.isNotEmpty) {
-        final fileBytes = result.files.first.bytes;
+        final file = result.files.first;
+        final fileBytes = file.bytes;
         if (fileBytes != null) {
           final jsonString = utf8.decode(fileBytes);
           _parseAndApplyFcmJson(jsonString);
+        } else {
+          _showPasteJsonDialog();
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to pick JSON file: $e'),
-            backgroundColor: AdminColors.error,
-          ),
-        );
+        _showPasteJsonDialog();
       }
     }
   }
