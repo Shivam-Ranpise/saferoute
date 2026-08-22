@@ -37,7 +37,7 @@ class Organization {
     this.timezone = 'UTC',
     this.isActive = true,
     this.driverCanBroadcastOrgWide = false,
-    this.driverCanSendEmergencyAlerts = false,
+    this.driverCanSendEmergencyAlerts = true,
     this.driverCanSendCustomAlerts = true,
     this.emergencyOverrideEnabled = false,
     this.gpsHistoryRetentionDays = 30,
@@ -70,7 +70,7 @@ class Organization {
         driverCanBroadcastOrgWide:
             json['driver_can_broadcast_org_wide'] as bool? ?? false,
         driverCanSendEmergencyAlerts:
-            json['driver_can_send_emergency_alerts'] as bool? ?? false,
+            json['driver_can_send_emergency_alerts'] as bool? ?? true,
         driverCanSendCustomAlerts:
             json['driver_can_send_custom_alerts'] as bool? ?? true,
         emergencyOverrideEnabled:

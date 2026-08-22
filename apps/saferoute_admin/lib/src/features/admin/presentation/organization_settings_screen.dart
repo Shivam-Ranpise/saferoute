@@ -34,7 +34,7 @@ class _OrganizationSettingsScreenState
   // Policies & Retentions
   double _gpsRetentionDays = 30;
   double _notificationRetentionDays = 90;
-  bool _driverEmergencyAlerts = false;
+  bool _driverEmergencyAlerts = true;
   bool _driverCustomAlerts = true;
 
   // Daily Operating Schedule for Monday..Sunday
