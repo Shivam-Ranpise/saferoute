@@ -330,6 +330,24 @@ class DriverRepository {
               'channel': 'PUSH',
               'status': 'SENT',
             });
+
+        try {
+          await SupabaseService.client.functions.invoke(
+            'push-dispatch',
+            body: {
+              'event_id': eventId,
+              'organization_id': organizationId,
+              'bus_id': busId,
+              'title': title,
+              'message': description,
+              'event_type': isDelay ? 'BUS_DELAY' : 'EMERGENCY',
+              'sender_profile_id': driverProfileId,
+            },
+          );
+          AppLogger.info('push-dispatch invoked for targeted parent $targetParentProfileId', context: 'DriverRepository');
+        } catch (pushErr) {
+          AppLogger.warning('push-dispatch invocation error: $pushErr', context: 'DriverRepository');
+        }
       } else {
         // Broadcast to all enrolled parents of this bus
         await _dispatchDeliveriesForEvent(
@@ -435,6 +453,22 @@ class DriverRepository {
         'Dispatched ${deliveries.length} deliveries for event $eventId (busId: $busId)',
         context: 'DriverRepository',
       );
+
+      // Invoke Supabase Edge Function to deliver FCM Push to parent devices
+      try {
+        await SupabaseService.client.functions.invoke(
+          'push-dispatch',
+          body: {
+            'event_id': eventId,
+            'organization_id': organizationId,
+            'bus_id': busId,
+            'sender_profile_id': currentDriverId,
+          },
+        );
+        AppLogger.info('Triggered FCM push-dispatch for event $eventId', context: 'DriverRepository');
+      } catch (pushErr) {
+        AppLogger.warning('push-dispatch invocation note: $pushErr', context: 'DriverRepository');
+      }
     } catch (delErr) {
       AppLogger.warning(
         'Could not fan out deliveries for event $eventId: $delErr',

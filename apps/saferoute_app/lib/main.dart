@@ -8,13 +8,43 @@ import 'src/features/notifications/services/app_notification_service.dart';
 import 'src/providers/locale_provider.dart';
 import 'src/router/app_router.dart';
 import 'src/theme/app_theme.dart';
-
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp();
+    final localNotifs = FlutterLocalNotificationsPlugin();
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    await localNotifs.initialize(const InitializationSettings(android: androidSettings));
+
+    final title = message.notification?.title ?? message.data['title'] ?? 'SafeRoute Alert';
+    final body = message.notification?.body ?? message.data['body'] ?? message.data['message'] ?? '';
+
+    if (body.isNotEmpty) {
+      const androidDetails = AndroidNotificationDetails(
+        'saferoute_emergency_alerts_v2',
+        'SafeRoute Push Notifications',
+        channelDescription: 'High-priority floating banners and system notifications for SafeRoute alerts',
+        importance: Importance.max,
+        priority: Priority.max,
+        ticker: 'SafeRoute Notification',
+        icon: '@mipmap/ic_launcher',
+        playSound: true,
+        enableVibration: true,
+        visibility: NotificationVisibility.public,
+        styleInformation: BigTextStyleInformation(''),
+      );
+
+      final notifId = (message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString()).hashCode.abs() % 100000;
+      await localNotifs.show(
+        notifId,
+        title,
+        body,
+        const NotificationDetails(android: androidDetails),
+      );
+    }
   } catch (_) {}
 }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:saferoute_core/saferoute_core.dart';
@@ -51,8 +53,11 @@ class _OrganizationSettingsScreenState
   final _smsSenderIdController = TextEditingController();
   final _smsApiKeyController = TextEditingController();
   final _fcmProjectIdController = TextEditingController();
+  final _fcmClientEmailController = TextEditingController();
+  final _fcmPrivateKeyController = TextEditingController();
   final _fcmEndpointController = TextEditingController();
 
+  bool _showPrivateKey = false;
   bool _isSaving = false;
   bool _initialized = false;
 
@@ -112,7 +117,12 @@ class _OrganizationSettingsScreenState
     _smsUrlController.text = api['sms_endpoint'] as String? ?? '';
     _smsSenderIdController.text = api['sms_sender_id'] as String? ?? '';
     _smsApiKeyController.text = api['sms_api_key'] as String? ?? '';
-    _fcmProjectIdController.text = api['fcm_project_id'] as String? ?? '';
+    
+    // Resolve FCM fields from nested map or flat keys
+    final fcmMap = api['fcm'] is Map ? (api['fcm'] as Map) : null;
+    _fcmProjectIdController.text = fcmMap?['project_id'] as String? ?? api['fcm_project_id'] as String? ?? 'saferoute-80c5b';
+    _fcmClientEmailController.text = fcmMap?['client_email'] as String? ?? api['fcm_client_email'] as String? ?? '';
+    _fcmPrivateKeyController.text = fcmMap?['private_key'] as String? ?? api['fcm_private_key'] as String? ?? '';
     _fcmEndpointController.text = api['fcm_endpoint'] as String? ?? '';
     _initialized = true;
   }
@@ -130,14 +140,26 @@ class _OrganizationSettingsScreenState
         'working_days': workingDaysList,
       };
 
+      final fcmConfig = {
+        'project_id': _fcmProjectIdController.text.trim().isNotEmpty
+            ? _fcmProjectIdController.text.trim()
+            : 'saferoute-80c5b',
+        'client_email': _fcmClientEmailController.text.trim(),
+        'private_key': _fcmPrivateKeyController.text.trim(),
+      };
+
       final updatedApi = {
         'whatsapp_endpoint': _whatsappUrlController.text.trim(),
         'whatsapp_token': _whatsappTokenController.text.trim(),
         'sms_endpoint': _smsUrlController.text.trim(),
         'sms_sender_id': _smsSenderIdController.text.trim(),
         'sms_api_key': _smsApiKeyController.text.trim(),
-        'fcm_project_id': _fcmProjectIdController.text.trim(),
+        'fcm_project_id': fcmConfig['project_id'],
+        'fcm_client_email': fcmConfig['client_email'],
+        'fcm_private_key': fcmConfig['private_key'],
         'fcm_endpoint': _fcmEndpointController.text.trim(),
+        if (fcmConfig['private_key']!.isNotEmpty && fcmConfig['client_email']!.isNotEmpty)
+          'fcm': fcmConfig,
       };
 
       final updatedOrg = Organization(
@@ -777,8 +799,155 @@ class _OrganizationSettingsScreenState
     );
   }
 
+  // ── Helper methods for Firebase Service Account JSON Upload & Parsing ──
+  Future<void> _handleUploadJson() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final fileBytes = result.files.first.bytes;
+        if (fileBytes != null) {
+          final jsonString = utf8.decode(fileBytes);
+          _parseAndApplyFcmJson(jsonString);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick JSON file: $e'),
+            backgroundColor: AdminColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _parseAndApplyFcmJson(String jsonString) {
+    try {
+      final Map<String, dynamic> data = json.decode(jsonString);
+      final projectId = data['project_id'] as String?;
+      final clientEmail = data['client_email'] as String?;
+      final privateKey = data['private_key'] as String?;
+
+      if (projectId == null || clientEmail == null || privateKey == null) {
+        throw 'Invalid service account JSON: Missing project_id, client_email, or private_key';
+      }
+
+      setState(() {
+        _fcmProjectIdController.text = projectId;
+        _fcmClientEmailController.text = clientEmail;
+        _fcmPrivateKeyController.text = privateKey;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Firebase Service Account JSON parsed successfully! Click "Save All Settings" to persist.'),
+          backgroundColor: AdminColors.safetyGreen,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error parsing JSON: $e'),
+          backgroundColor: AdminColors.error,
+        ),
+      );
+    }
+  }
+
+  void _showPasteJsonDialog() {
+    final pasteController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.code_rounded, color: AdminColors.deepNavy),
+            SizedBox(width: 10),
+            Text('Paste Service Account JSON', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Paste the complete contents of your firebase-service-account.json below:',
+                style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pasteController,
+                maxLines: 8,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                decoration: InputDecoration(
+                  hintText: '{\n  "type": "service_account",\n  "project_id": "saferoute-80c5b",\n  ...\n}',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdminColors.deepNavy,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('Parse & Apply'),
+            onPressed: () {
+              final text = pasteController.text.trim();
+              if (text.isNotEmpty) {
+                Navigator.pop(dialogCtx);
+                _parseAndApplyFcmJson(text);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            '$label:',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AdminColors.textSecondary),
+          ),
+        ),
+        Expanded(
+          child: SelectableText(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AdminColors.textPrimary),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ── Tab 4: API Gateways & Cloud Messaging ──────────────────────────────────
   Widget _buildApiGatewaysTab() {
+    final bool isFcmConfigured = _fcmPrivateKeyController.text.trim().isNotEmpty &&
+        _fcmClientEmailController.text.trim().isNotEmpty;
+
     return SingleChildScrollView(
       child: Card(
         child: Padding(
@@ -786,6 +955,180 @@ class _OrganizationSettingsScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                'Firebase Cloud Messaging (FCM) Push Gateway',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Connects your school organization to Google FCM to dispatch high-priority push notifications and floating banners to parent devices when closed or locked.',
+                style: TextStyle(fontSize: 13, color: AdminColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+
+              if (isFcmConfigured) ...[
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AdminColors.safetyGreen.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AdminColors.safetyGreen.withValues(alpha: 0.35)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: AdminColors.safetyGreen, size: 22),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Firebase Service Account Configured',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AdminColors.safetyGreen),
+                          ),
+                          const Spacer(),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AdminColors.deepNavy,
+                                  side: const BorderSide(color: AdminColors.deepNavy),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.upload_file_rounded, size: 16),
+                                label: const Text('Replace JSON', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                onPressed: _handleUploadJson,
+                              ),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AdminColors.error,
+                                  side: const BorderSide(color: AdminColors.error),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                                label: const Text('Clear', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                onPressed: () {
+                                  setState(() {
+                                    _fcmClientEmailController.clear();
+                                    _fcmPrivateKeyController.clear();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      _buildDetailRow('Project ID', _fcmProjectIdController.text),
+                      const SizedBox(height: 10),
+                      _buildDetailRow('Client Email', _fcmClientEmailController.text),
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                            width: 120,
+                            child: Text(
+                              'Private Key:',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AdminColors.textSecondary),
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: SelectableText(
+                                    _showPrivateKey
+                                        ? _fcmPrivateKeyController.text
+                                        : '•••••••••••••••••••••••••••••••••••••••••••• (RSA 2048-bit Encrypted Private Key)',
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 12,
+                                      color: _showPrivateKey ? Colors.black87 : Colors.grey.shade700,
+                                    ),
+                                    maxLines: _showPrivateKey ? null : 1,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    _showPrivateKey ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                    size: 18,
+                                    color: AdminColors.textSecondary,
+                                  ),
+                                  onPressed: () => setState(() => _showPrivateKey = !_showPrivateKey),
+                                  tooltip: _showPrivateKey ? 'Hide Private Key' : 'Show Private Key',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.shade400),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.amber.shade900, size: 24),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Firebase Service Account JSON Not Uploaded',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.amber.shade900),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Upload your firebase-service-account.json downloaded from Firebase Console > Project Settings > Service accounts.',
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 10,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AdminColors.deepNavy,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            ),
+                            icon: const Icon(Icons.upload_file_rounded, size: 18),
+                            label: const Text('Upload JSON File', style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: _handleUploadJson,
+                          ),
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AdminColors.deepNavy,
+                              side: const BorderSide(color: AdminColors.deepNavy),
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                            ),
+                            icon: const Icon(Icons.paste_rounded, size: 18),
+                            label: const Text('Paste JSON Text', style: TextStyle(fontWeight: FontWeight.bold)),
+                            onPressed: _showPasteJsonDialog,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 28),
+              const Divider(),
+              const SizedBox(height: 20),
               const Text(
                 'External Multi-Channel Messaging Gateways',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminColors.textPrimary),
@@ -832,24 +1175,6 @@ class _OrganizationSettingsScreenState
                 decoration: const InputDecoration(
                   labelText: 'SMS API Key Secret',
                   prefixIcon: Icon(Icons.lock_rounded),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _fcmProjectIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Firebase FCM Project ID',
-                  prefixIcon: Icon(Icons.cloud_outlined),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _fcmEndpointController,
-                decoration: const InputDecoration(
-                  labelText: 'FCM HTTP v1 API Endpoint',
-                  prefixIcon: Icon(Icons.link_rounded),
                 ),
               ),
             ],

@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:saferoute_core/saferoute_core.dart';
@@ -103,16 +104,52 @@ class AppNotificationHelper {
     }
   }
 
-  /// Ensures notification permission is granted on ANY Android version (9 to 15+).
+  static const MethodChannel _oemChannel =
+      MethodChannel('com.saferoute.saferoute_app/oem_settings');
+
+  /// Checks if battery optimization is currently ignored for SafeRoute
+  static Future<bool> isBatteryOptimizationIgnored() async {
+    try {
+      final isIgnored =
+          await _oemChannel.invokeMethod<bool>('isBatteryOptimizationIgnored');
+      return isIgnored ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Triggers the native Android 1-tap prompt: "Let SafeRoute always run in background?"
+  static Future<bool> requestIgnoreBatteryOptimization() async {
+    try {
+      final res = await _oemChannel
+          .invokeMethod<bool>('requestIgnoreBatteryOptimization');
+      return res ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Direct 1-tap deep link to Vivo / Xiaomi / Oppo OEM Autostart manager
+  static Future<bool> openAutostartSettings() async {
+    try {
+      final res =
+          await _oemChannel.invokeMethod<bool>('openAutostartSettings');
+      return res ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Ensures notification & background battery permissions are configured
   static Future<void> ensureNotificationPermission(BuildContext context) async {
     await init();
 
     try {
-      var status = await Permission.notification.status;
-      AppLogger.info('ensureNotificationPermission check -> status: $status', context: 'AppNotificationHelper');
-      if (!status.isGranted) {
-        status = await Permission.notification.request();
-        AppLogger.info('Permission re-request result: $status', context: 'AppNotificationHelper');
+      var notifStatus = await Permission.notification.status;
+      AppLogger.info('ensureNotificationPermission check -> status: $notifStatus', context: 'AppNotificationHelper');
+      if (!notifStatus.isGranted) {
+        notifStatus = await Permission.notification.request();
+        AppLogger.info('Permission re-request result: $notifStatus', context: 'AppNotificationHelper');
       }
 
       final androidPlugin = _localNotifs.resolvePlatformSpecificImplementation<
@@ -120,19 +157,117 @@ class AppNotificationHelper {
       if (androidPlugin != null) {
         final granted = await androidPlugin.requestNotificationsPermission();
         if (granted == false) {
-          status = PermissionStatus.denied;
+          notifStatus = PermissionStatus.denied;
         }
       }
 
-      if (!status.isGranted && context.mounted && !_dialogShowing) {
+      if (!notifStatus.isGranted && context.mounted && !_dialogShowing) {
         AppLogger.info('Permission not granted. Presenting mandatory setting dialog...', context: 'AppNotificationHelper');
         _dialogShowing = true;
         await _showMandatoryPermissionDialog(context);
         _dialogShowing = false;
+        return;
+      }
+
+      // Check battery optimization / background wakeups for closed app alerts
+      final isBatteryIgnored = await isBatteryOptimizationIgnored();
+      if (!isBatteryIgnored && context.mounted && !_dialogShowing) {
+        _dialogShowing = true;
+        await _showBackgroundOptimizationDialog(context);
+        _dialogShowing = false;
       }
     } catch (e) {
-      AppLogger.warning('Error checking notification permission: $e', context: 'AppNotificationHelper');
+      AppLogger.warning('Error checking notification/background permission: $e', context: 'AppNotificationHelper');
     }
+  }
+
+  static Future<void> _showBackgroundOptimizationDialog(BuildContext context) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogCtx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 8,
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.battery_charging_full_rounded,
+                  color: Color(0xFFD97706),
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Receive Alerts When Closed',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'To receive real-time bus arrivals and safety alerts while SafeRoute is closed or locked, enable background alerts.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.flash_on_rounded, size: 20),
+                  label: const Text(
+                    'Enable Background Alerts',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(dialogCtx);
+                    // 1. Direct native prompt
+                    await requestIgnoreBatteryOptimization();
+                    // 2. Open Autostart for Vivo / Xiaomi / Oppo OEM
+                    await openAutostartSettings();
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: Text(
+                  'Maybe Later',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   static Future<void> _showMandatoryPermissionDialog(BuildContext context) async {

@@ -132,13 +132,15 @@ Deno.serve(async (req: Request) => {
       .eq("id", orgId)
       .single();
 
-    const fcmConfig = org?.api_parameters?.fcm;
-    if (!fcmConfig || !fcmConfig.private_key || !fcmConfig.client_email) {
-      return new Response(JSON.stringify({ error: "FCM service account not configured for this organization" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const defaultFcmConfig = {
+      project_id: "saferoute-80c5b",
+      client_email: "firebase-adminsdk-fbsvc@saferoute-80c5b.iam.gserviceaccount.com",
+      private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDNzsnsykxiUP96\nX2JlxGG1CwpTxHb5B9DsYvFTFuZM4C7nxlVPrY2xUV2MlD93Y47t6Jga2xT7v+gW\n6Q0ir6TCYlcvDHwJn7/72dxq4AZAlEvYffl+5PEMub7ssbSfz0ByvB7FdwZSoZfI\npeIO7Jca6ge9Wa6TJBIHRdn9HuGZo9y/PX/on/xx0HLoHqv/yeTqS00sPAt9+BZV\np4BDjzv8XjQwn9FqnVKUMvj3gnnvrq+rzjGburUbsB5cd1w7s2WHdwMZO9rtvha3\nDYB5F7B9mxv3xrnhBofg47o4V1gSaS349xqELhA/W5ttr3eQyd9huvnAfqhJAHpq\neJSUh+O7AgMBAAECggEAKdd83hNS7DojdrGlw6LlanVQKC+tMHwSUbzb61Sghcie\nQKjl90kFoaM1LbuGG7O1/1BmfC9GWNhvSxkeforPKGXt67bSEPLViVKFqYTaQI7l\nzKHv84iAKWIqGt0WJ9du9uSgLO1B79LClRyElRwsrGAgKrLs9yVCNRBSfU+l9iIp\nDcQ7JPulhxHUV0wR6OIu7nxcfaMl4vzIJw8VgLa3+r5kK1RHSUJoWuo5Vb3LQb/G\nTy+z2kcbs9cgU2GGKajSqRCjGaENezrm5o4EnvbEbZ6O7SymIELfDL62NXIEAxeX\nXqF4m0zFQhHvXg8k2hR9Alyhhu2VKc+KTCyksbypgQKBgQDlkZAzt1EyjBz953Sf\n5ApZWCoxjnlp6s+rr0DYTWSimWTwqNB+mzC2I7TTu85VEcdYXsTrmLei0a5J0bes\nl4KxiwQmYZj0851A0JFJyuUlVBNNPBpgRCqkzB0IZEKQNYCK6DKbWlfO0LAuUeO2\nFR0iPwUmZ/clPrFy4McDcTJLywKBgQDlgOKKMLdWpCg1k5nO1myfnebLpl/1w/xR\nrPK/8aC1y19YtYd95UuIbplFINJUEFafy0SzLtawUhlr0aY3w9+dvTYk/kMUKSfJ\nzmmN0FUQCPbGIW+Sd5DQab4bbCunt30SOvGzkBpWW9sf8o3VIlhLQqZhTaIZ/ib8\njaIt822p0QKBgQCCgrCiVhN5UyKgTleFFtWzWWYTalYoGvAZQLbywXz225IBJ1fw\nwjV9Nut0fA6fWk4kNSxqbBXqIJ6fJPTwz+njGY8wasfUajL6SBhxBUIkaJnYjNTJ\n6bb8nXXb8XPOHDyJu9wZadEFqKqgirmUKIi5kW5SGUTuDahAEP3TPSVE5QKBgCtW\n43DlMjoSVeWIMgt1Qp4B24upp4VptURXPKAyqP6roR3HagbEPjdNa3Q6dn2ZeEJE\nyHxt4+z4FATgWls9igTnrkneGhy8iN77M8OsC+QzTSatObyXB6nTziqviq7pX50J\ntIsMM20Le53U2CPfkHzl4TWOy4XNEN+wf2feCF+BAoGBAK0t76eCHKHc6/pCs3xe\nMxkvdDa0YuM6qFszJ6xDCYaQKlWBsN20hDu1MieogiLT8RYl9I7b0SbHT6vO3s6t\n90iDlctjhZwqY5PfdEDXmtlimg0VVdV0NqlrmfYhb/E2tOtfJAeKWDds4qL1Sv4l\nTu2l/IUWyIN5GnjdsD6rajiy\n-----END PRIVATE KEY-----\n",
+    };
+
+    const fcmConfig = org?.api_parameters?.fcm?.private_key
+      ? org.api_parameters.fcm
+      : defaultFcmConfig;
 
     const projectId = fcmConfig.project_id || "saferoute-80c5b";
     const googleToken = await getGoogleAccessToken(fcmConfig.client_email, fcmConfig.private_key);

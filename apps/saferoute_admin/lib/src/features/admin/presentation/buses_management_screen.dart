@@ -208,6 +208,69 @@ class _BusesManagementScreenState extends ConsumerState<BusesManagementScreen> {
     );
   }
 
+  Future<void> _confirmDeleteBus(Bus b) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AdminColors.error),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Delete Bus',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete bus "${b.busNumber}" (${b.registrationNumber})?\n\nAny assigned students and drivers will be unassigned automatically.',
+          style: const TextStyle(fontSize: 14, color: AdminColors.textPrimary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdminColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete Bus', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await ref.read(adminRepositoryProvider).deleteBus(b.id);
+      ref.invalidate(adminBusesProvider);
+      ref.invalidate(organizationStatsProvider);
+
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Bus "${b.busNumber}" deleted successfully!'),
+              backgroundColor: AdminColors.deepNavy,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to delete bus. Please try again.'),
+              backgroundColor: AdminColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final busesAsync = ref.watch(adminBusesProvider);
@@ -442,15 +505,8 @@ class _BusesManagementScreenState extends ConsumerState<BusesManagementScreen> {
                                                   Icons.delete_outline_rounded,
                                                   size: 18,
                                                   color: AdminColors.error),
-                                              tooltip: 'Delete',
-                                              onPressed: () async {
-                                                await ref
-                                                    .read(adminRepositoryProvider)
-                                                    .deleteBus(b.id);
-                                                ref.invalidate(adminBusesProvider);
-                                                ref.invalidate(
-                                                    organizationStatsProvider);
-                                              },
+                                              tooltip: 'Delete Bus',
+                                              onPressed: () => _confirmDeleteBus(b),
                                             ),
                                           ],
                                         ),

@@ -164,13 +164,60 @@ class AdminRepository {
     }
   }
 
-  /// Deletes a bus
+  /// Safely deletes a bus by unlinking assigned children/drivers and removing associated trips
   Future<bool> deleteBus(String busId) async {
     try {
+      // 1. Unlink students assigned to this bus
+      await _db.from('children').update({'bus_id': null}).eq('bus_id', busId);
+      // 2. Unlink drivers assigned to this bus
+      await _db.from('drivers').update({'current_bus_id': null}).eq('current_bus_id', busId);
+      // 3. Delete trip logs for this bus
+      await _db.from('trips').delete().eq('bus_id', busId);
+      // 4. Delete the bus record
       await _db.from('buses').delete().eq('id', busId);
       return true;
     } catch (e) {
       AppLogger.error('Failed to delete bus',
+          error: e, context: 'AdminRepository');
+      return false;
+    }
+  }
+
+  /// Safely deletes a driver and their associated profile
+  Future<bool> deleteDriver(String driverId, {String? profileId}) async {
+    try {
+      // 1. Unassign driver from fleet buses
+      await _db.from('buses').update({'current_driver_id': null}).eq('current_driver_id', driverId);
+      // 2. Delete driver trip records
+      await _db.from('trips').delete().eq('driver_id', driverId);
+      // 3. Delete driver record
+      await _db.from('drivers').delete().eq('id', driverId);
+      // 4. Delete driver profile if provided
+      if (profileId != null) {
+        await _db.from('profiles').delete().eq('id', profileId);
+      }
+      return true;
+    } catch (e) {
+      AppLogger.error('Failed to delete driver',
+          error: e, context: 'AdminRepository');
+      return false;
+    }
+  }
+
+  /// Safely deletes a parent and unlinks their registered students
+  Future<bool> deleteParent(String parentId, {String? profileId}) async {
+    try {
+      // 1. Unlink children from this parent
+      await _db.from('children').update({'parent_id': null}).eq('parent_id', parentId);
+      // 2. Delete parent record
+      await _db.from('parents').delete().eq('id', parentId);
+      // 3. Delete parent profile if provided
+      if (profileId != null) {
+        await _db.from('profiles').delete().eq('id', profileId);
+      }
+      return true;
+    } catch (e) {
+      AppLogger.error('Failed to delete parent',
           error: e, context: 'AdminRepository');
       return false;
     }
